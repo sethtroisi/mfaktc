@@ -13,11 +13,12 @@ NVCC = nvcc
 NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v
 
 # generate code for various compute capabilities
-NVCCFLAGS += --generate-code arch=compute_11,code=sm_11 # CC 1.1, 1.2 and 1.3 GPUs will use this code (1.0 is not possible for mfaktc)
-NVCCFLAGS += --generate-code arch=compute_20,code=sm_20 # CC 2.x GPUs will use this code, one code fits all!
-NVCCFLAGS += --generate-code arch=compute_30,code=sm_30 # all CC 3.x GPUs _COULD_ use this code 
-NVCCFLAGS += --generate-code arch=compute_35,code=sm_35 # but CC 3.5 (3.2?) _CAN_ use funnel shift which is useful for mfaktc
-NVCCFLAGS += --generate-code arch=compute_50,code=sm_50 # CC 5.x GPUs will use this code
+#NVCCFLAGS += --generate-code arch=compute_11,code=sm_11 # CC 1.1, 1.2 and 1.3 GPUs will use this code (1.0 is not possible for mfaktc)
+#NVCCFLAGS += --generate-code arch=compute_20,code=sm_20 # CC 2.x GPUs will use this code, one code fits all!
+#NVCCFLAGS += --generate-code arch=compute_30,code=sm_30 # all CC 3.x GPUs _COULD_ use this code
+#NVCCFLAGS += --generate-code arch=compute_35,code=sm_35 # but CC 3.5 (3.2?) _CAN_ use funnel shift which is useful for mfaktc
+#NVCCFLAGS += --generate-code arch=compute_50,code=sm_50 # CC 5.x GPUs will use this code
+NVCCFLAGS += --generate-code arch=compute_61,code=sm_61 # CC 1.1, 1.2 and 1.3 GPUs will use this code (1.0 is not possible for mfaktc)
 
 # pass some options to the C host compiler (e.g. gcc on Linux)
 NVCCFLAGS += --compiler-options=-Wall
@@ -47,10 +48,10 @@ clean :
 
 sieve.o : sieve.c
 	$(CC) $(CFLAGS) $(CFLAGS_EXTRA_SIEVE) -c $< -o $@
-	
+
 tf_75bit.o : tf_96bit.cu
 	$(NVCC) $(NVCCFLAGS) -c $< -o $@ -DSHORTCUT_75BIT
-	
+
 %.o : %.cu
 	$(NVCC) $(NVCCFLAGS) -c $< -o $@
 
