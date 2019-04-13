@@ -517,12 +517,14 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
 #ifdef WAGSTAFF
   #define NUM_SELFTESTS 1591
 #else /* Mersennes */
-  #define NUM_SELFTESTS 2867
+  #define NUM_SELFTESTS 3001
 #endif
-  unsigned int exp[NUM_SELFTESTS], index[9];
+  unsigned int index[9];
   int num_selftests=0;
-  int bit_min[NUM_SELFTESTS], f_class;
-  unsigned long long int k[NUM_SELFTESTS];
+  int f_class;
+  unsigned int           exp[NUM_SELFTESTS+1]={};
+  int                    bit_min[NUM_SELFTESTS+1]={};
+  unsigned long long int k[NUM_SELFTESTS+1]={};
   int retval=1;
 
   #define NUM_KERNEL 17
@@ -534,6 +536,22 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
 #else /* Mersennes */
   #include "selftest-data-mersenne.c"
 #endif
+
+  {
+    for(i = 0; i < NUM_SELFTESTS; i++) {
+      if (exp[i] == 0 || bit_min[i] == 0 || k[i] == 0) {
+        printf("selftest FAILED!\n");
+        printf("  setup failed: %d had zero exp, bit_min, or k\n", i);
+        return retval;
+      }
+    }
+    int past = NUM_SELFTESTS;
+    if (exp[past] != 0 || bit_min[past] != 0 || k[past] != 0) {
+      printf("selftest FAILED!\n");
+      printf("  setup failed: NUM_SELFTESTS(%d) incorrect\n", past);
+      return retval;
+    }
+  }
 
   for(i = 0; i <= NUM_KERNEL; i++)
   {
