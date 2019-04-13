@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -37,7 +37,7 @@ void my_signal_handler(int signum)
 invoked so we just register it again. */
   signal(signum, &my_signal_handler);
 #endif
-  
+
   if(signal_handler_mystuff->printmode == 1)printf("\n");
   signal_handler_mystuff->quit++;
   if(signal_handler_mystuff->quit == 1)

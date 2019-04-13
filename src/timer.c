@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -36,7 +36,7 @@ unsigned long long int timer_diff(struct timeval *timer)
   usecs *= 1000000ULL;
   usecs += (unsigned long long int)t2.tv_usec;
   usecs -= (unsigned long long int)timer->tv_usec;
-  
+
   return usecs;
 }
 
@@ -46,9 +46,9 @@ void timertest()
   struct timeval timer;
   unsigned long long int iter=0, zero=0, negative=0, positive=0;
   unsigned long long int diff, last_diff=0, min_step=1000000, max_step=0;
-  
+
   printf("checking timer functions\n");
-  
+
   timer_init(&timer);
   do
   {
@@ -85,7 +85,7 @@ void sleeptest()
     t_min = 0xFFFFFFFFFFFFFFFFULL;
     t_max = 0;
     t_sum = 0;
-    
+
     reps = 1000000 / delay;
 
     for(i = 0; i < reps; i++)
@@ -93,7 +93,7 @@ void sleeptest()
       timer_init(&timer);
       my_usleep(delay);
       t = timer_diff(&timer);
-    
+
       if(t < t_min)t_min = t;
       if(t > t_max)t_max = t;
       t_sum += t;

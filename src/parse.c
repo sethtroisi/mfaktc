@@ -12,7 +12,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -71,7 +71,7 @@ returns
 */
 {
   unsigned int i;
-  
+
   if(n<=1) return 0;
   if(n>2 && n%2==0)return 0;
 
@@ -92,7 +92,7 @@ returns 1 if the assignment is within the supported bounds of mfaktc,
 */
 {
   int ret = 1;
-  
+
        if(exp < 100000 )      {ret = 0; if(verbosity >= 1)printf("WARNING: exponents < 100000 are not supported!\n");}
   else if(!isprime(exp))      {ret = 0; if(verbosity >= 1)printf("WARNING: exponent is not prime!\n");}
   else if(bit_min < 1 )       {ret = 0; if(verbosity >= 1)printf("WARNING: bit_min < 1 doesn't make sense!\n");}
@@ -101,9 +101,9 @@ returns 1 if the assignment is within the supported bounds of mfaktc,
   else if(bit_max > 95)       {ret = 0; if(verbosity >= 1)printf("WARNING: bit_max > 95 is not supported!\n");}
   else if(((double)(bit_max-1) - (log((double)exp) / log(2.0F))) > 63.9F) /* this leave enough room so k_min/k_max won't overflow in tf_XX() */
                               {ret = 0; if(verbosity >= 1)printf("WARNING: k_max > 2^63.9 is not supported!\n");}
-  
+
   if(verbosity >= 1 && ret == 0)printf("         Ignoring TF %s%u from 2^%d to 2^%d!\n", NAME_NUMBERS, exp, bit_min, bit_max);
-  
+
   return ret;
 }
 
@@ -306,21 +306,21 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
         default:                  printf("unknown error on >%s<",line); break;
       }
     }
-    
+
     // if (LONG_LINE != value)
     //	return 2;
   }
   while (TRUE);
-  
+
   fclose(f_in);
   if (NO_WARNING == value)
   {
     *exponent = assignment.exponent;
     *bit_min = assignment.bit_min;
     *bit_max = assignment.bit_max;
-    
+
     if (key!=NULL)strcpy(*key,assignment.assignment_key);
-    
+
     return OK;
   }
   else
@@ -357,18 +357,18 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
   unsigned int line_to_drop = UINT_MAX;
   unsigned int current_line;
   struct ASSIGNMENT assignment;	// the found assignment....
-  
+
   f_in = fopen(filename, "r");
   if (NULL == f_in)
     return CANT_OPEN_WORKFILE;
-  
+
   f_out = fopen("__worktodo__.tmp", "w");
   if (NULL == f_out)
   {
     fclose(f_in);
     return CANT_OPEN_TEMPFILE;
   }
-  
+
   if ((bit_min_new > bit_min) && (bit_min_new < bit_max))	// modify only
     line_to_drop = UINT_MAX;
   else
@@ -394,7 +394,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
         line_to_drop = current_line+1;
     }
   }
-  
+
   errno = 0;
   if (fseek(f_in,0L,SEEK_SET))
   {
@@ -406,7 +406,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
       return CANT_OPEN_WORKFILE;
     }
   }
-  
+
   found = FALSE;
   current_line = 0;
   while (END_OF_FILE != (value = parse_worktodo_line(f_in,&assignment,&line,&tail)) )
@@ -456,10 +456,10 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
   FILE *workfile, *addfile;
   char buffer[512];
   size_t n;
-  
+
 
   if(verbosity >= 2)printf("checking for \"%s\"... ", addfilename);
-  
+
   addfile = fopen(addfilename, "r");
   if(addfile == NULL)
   {
@@ -470,7 +470,7 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
   {
     if(verbosity >= 2)printf("found!\n");
     (*addfilesstatus)++;
-    
+
     if((*addfilesstatus) >= 2)
     {
       if(verbosity >= 2)printf("  -> adding \"%s\" to \"%s\" now\n", addfilename, workfilename);

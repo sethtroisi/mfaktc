@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -27,7 +27,7 @@ unsigned int checkpoint_checksum(char *string, int chars)
 {
   unsigned int chksum=0;
   int i,j;
-  
+
   for(i=0;i<chars;i++)
   {
     for(j=7;j>=0;j--)
@@ -53,9 +53,9 @@ checkpoint_write() writes the checkpoint file.
   FILE *f;
   char buffer[100], filename[20];
   unsigned int i;
-  
+
   sprintf(filename, "%s%u.ckp", NAME_NUMBERS, exp);
-  
+
   f=fopen(filename, "w");
   if(f==NULL)
   {
@@ -85,14 +85,14 @@ returns 0 otherwise
   FILE *f;
   int ret=0,i,chksum;
   char buffer[100], buffer2[100], *ptr, filename[20];
-  
+
   for(i=0;i<100;i++)buffer[i]=0;
 
   *cur_class=-1;
   *num_factors=0;
-  
+
   sprintf(filename, "%s%u.ckp", NAME_NUMBERS, exp);
-  
+
   f=fopen(filename, "r");
   if(f==NULL)
   {
@@ -133,7 +133,7 @@ tries to delete the checkpoint file
 {
   char filename[20];
   sprintf(filename, "%s%u.ckp", NAME_NUMBERS, exp);
-  
+
   if(remove(filename))
   {
     if(errno != ENOENT) /* ENOENT = "No such file or directory" -> there was no checkpoint file */

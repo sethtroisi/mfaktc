@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -99,7 +99,7 @@ void sieve_init()
       }
     }
     prime_base[i]=j;
-    i++;    
+    i++;
     j+=2;
   }
   for(i=0;i<256;i++)
@@ -124,16 +124,16 @@ void sieve_free()
 int sieve_euclid_modified(int j, int n, int r)
 /*
 (k*j) % n = r
-calculates and returns k 
+calculates and returns k
 */
 {
 /* using long long int because I'm too lazy to figure out where I can live with
 smaller ints */
   long long int nn,nn_old,jj,pi0,pi1,pi2,qi0,qi1,qi2,tmp;
-  
+
   nn_old=n;
   jj=j;
-  
+
   if(r==0)return 0;	/* trivially! */
   if(j==1)return r;	/* easy, isn't it? */
 
@@ -207,15 +207,15 @@ allows to find composite factors. */
     j++;
   }
 
-#ifdef MORE_CLASSES  
+#ifdef MORE_CLASSES
   for(i=4;i<sieve_limit;i++)
 #else
   for(i=3;i<sieve_limit;i++)
-#endif  
+#endif
   {
-    p=primes[i];  
+    p=primes[i];
     k=0;
-// oldest version, explains what happens here a little bit */    
+// oldest version, explains what happens here a little bit */
 //    while((2 * (exp%p) * ((k_start+k*NUM_CLASSES)%p)) %p != (p-1))k++;
 
 
@@ -257,13 +257,13 @@ still a brute force trail&error method */
       printf("  check= %" PRId64 "\n",check);
     }
   }
-  
+
   for(i=0;i<SIEVE_SIZE;i++)sieve_set_bit(sieve_base,i);
 
 #ifdef MORE_CLASSES
 /* presieve 13, 17, 19 and 23 in sieve_base */
   for(i=4;i<=7;i++)
-#else  
+#else
 /* presieve 11, 13, 17 and 19 in sieve_base */
   for(i=3;i<=6;i++)
 #endif
@@ -290,10 +290,10 @@ void sieve_candidates(int ktab_size, unsigned int *ktab, int sieve_limit)
   unsigned int *ptr, *ptr_max;
 
 #ifdef RAW_GPU_BENCH
-//  quick hack to "speed up the siever", used for GPU-code benchmarks  
+//  quick hack to "speed up the siever", used for GPU-code benchmarks
   for(i=0;i<ktab_size;i++)ktab[i]=i;
   return;
-#endif  
+#endif
 
   if(last_sieve < SIEVE_SIZE)
   {
@@ -370,11 +370,11 @@ this behaviour and precompute them. :)
       }
       k_init[i]=j-SIEVE_SIZE;
     }
-    
+
 /*
 we have finished sieving and now we need to translate the remaining bits in
 the sieve to the correspondic k_tab offsets
-*/    
+*/
 
 /* part one of the loop:
 Get the bits out of the sieve until i is a multiple of 32
@@ -405,13 +405,13 @@ b) ktab is nearly filled up */
 #ifdef SIEVER_OLD_METHOD
       sieve_table_=sieve_table[ s     &0xFF];
       for(p=0;p<sieve_table_[8];p++) ktab[k++]=ic   +sieve_table_[p];
-      
+
       sieve_table_=sieve_table[(s>>8 )&0xFF];
       for(p=0;p<sieve_table_[8];p++) ktab[k++]=ic +8+sieve_table_[p];
-      
+
       sieve_table_=sieve_table[(s>>16)&0xFF];
       for(p=0;p<sieve_table_[8];p++) ktab[k++]=ic+16+sieve_table_[p];
-      
+
       sieve_table_=sieve_table[ s>>24      ];
       for(p=0;p<sieve_table_[8];p++) ktab[k++]=ic+24+sieve_table_[p];
 
@@ -430,7 +430,7 @@ b) ktab is nearly filled up */
         ktab[k+7]=ic+sieve_table_[7];
       }
       k+=sieve_table_8;
-      
+
       sieve_table_=sieve_table[(s>>8 )&0xFF];
       sieve_table_8=sieve_table_[8];
       ic+=8;
@@ -446,7 +446,7 @@ b) ktab is nearly filled up */
         ktab[k+7]=ic+sieve_table_[7];
       }
       k+=sieve_table_8;
-      
+
       sieve_table_=sieve_table[(s>>16)&0xFF];
       sieve_table_8=sieve_table_[8];
       ic+=8;
@@ -462,7 +462,7 @@ b) ktab is nearly filled up */
         ktab[k+7]=ic+sieve_table_[7];
       }
       k+=sieve_table_8;
-      
+
       sieve_table_=sieve_table[ s>>24      ];
       sieve_table_8=sieve_table_[8];
       ic+=8;
@@ -478,13 +478,13 @@ b) ktab is nearly filled up */
         ktab[k+7]=ic+sieve_table_[7];
       }
       k+=sieve_table_8;
-#endif      
+#endif
     }
 /* part three of the loop:
 Get the bits out of the sieve until
 a) sieve ends
 or
-b) ktab is full */    
+b) ktab is full */
     for(;i<SIEVE_SIZE;i++)
     {
       if(sieve_get_bit(sieve,i))

@@ -12,7 +12,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -53,7 +53,7 @@ int my_read_string(char *inifile, char *name, char *string, unsigned int len)
   unsigned int idx = strlen(name);
 
   if(len > 250) len = 250;
-  
+
   in = fopen(inifile, "r");
   if(!in)return 1;
   while(fgets(buf, 250, in) && !found)
@@ -69,7 +69,7 @@ int my_read_string(char *inifile, char *name, char *string, unsigned int len)
       }
       string[found] = '\0';
     }
-  }  
+  }
   fclose(in);
   if(found >= 1)return 0;
   return 1;
@@ -102,7 +102,7 @@ int read_config(mystuff_t *mystuff)
   if(mystuff->verbosity >= 1)printf("  SievePrimes               %d\n",i);
   mystuff->sieve_primes = i;
 
-/*****************************************************************************/  
+/*****************************************************************************/
 
   if(my_read_int("mfaktc.ini", "SievePrimesAdjust", &i))
   {
@@ -153,7 +153,7 @@ int read_config(mystuff_t *mystuff)
   if(mystuff->verbosity >= 1)printf("  SievePrimesMax            %d\n",i);
   mystuff->sieve_primes_max = i;
 
-/*****************************************************************************/  
+/*****************************************************************************/
 
   if(my_read_int("mfaktc.ini", "NumStreams", &i))
   {
@@ -239,7 +239,7 @@ int read_config(mystuff_t *mystuff)
       i = 1;
     }
   }
-  
+
   mystuff->gpu_sieving = i;
 
   if(mystuff->gpu_sieving) {
@@ -471,7 +471,7 @@ int read_config(mystuff_t *mystuff)
     mystuff->ComputerID[0]='\0';
   }
   else
-  {   
+  {
     if(mystuff->verbosity >= 1)printf("  ComputerID                %s\n", mystuff->ComputerID);
   }
 
