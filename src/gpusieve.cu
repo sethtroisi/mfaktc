@@ -78,15 +78,6 @@ const uint32 sieving1MCrossover = (primesBelow1M - primesNotSieved - primesHandl
 
 uint32 primes_per_thread = 0;		// Number of "rows" in the GPU sieving info array that each thread processes
 
-// Bit masks for small prime sieving
-
-#define BITSLL11 (1 | (1<<11) | (1<<22))
-#define BITSLL13 (1 | (1<<13) | (1<<26))
-#define BITSLL17 (1 | (1<<17))
-#define BITSLL19 (1 | (1<<19))
-#define BITSLL23 (1 | (1<<23))
-#define BITSLL29 (1 | (1<<29))
-#define BITSLL31 (1 | (1<<31))
 
 // Various padding required to keep warps accessing primes data on 128-byte boundaries
 
@@ -283,260 +274,93 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 	// This allows us to operate without atomic operations and without syncing.
 	//
 
-	uint32 thread_start = block_start + threadIdx.x * block_size / threadsPerBlock;
+	const uint32 thread_start = block_start + threadIdx.x * block_size / threadsPerBlock;
 
 	//
 	// In this section each thread handles one 32 bit word at a time sieving primes below 64.
 	// Each prime will hit a 32-bit word zero or one time.
 	//
 
+        const uint32 thread_size_32 = threadIdx.x * block_size / threadsPerBlock / 32;
+        const uint32 thread_size_64 = threadIdx.x * block_size / threadsPerBlock / 64;
+
+        // Used as part of primesNotSieved
+        const uint32 SMALL_PRIMES[] = {
+                2, 3, 5, 7,
+                11, 13, 17, 19, 23, 29, 31,
+        };
+        const uint32 PRIME_PI_32 = 11;
+
 	{
-	uint32 mask, mask2, mask3, mask4, i11, i13, i17, i19, i23, i29, i31, i37, i41, i43, i47, i53, i59, i61;
+	uint32 mask, mask2, mask3, mask4;
 
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		i11 = mod_const_p (bit_to_clr[4] - thread_start, 11);	// compute bit to clear for prime 11
-		i13 = mod_const_p (bit_to_clr[5] - thread_start, 13);	// compute bit to clear for prime 13
-		i17 = mod_const_p (bit_to_clr[6] - thread_start, 17);	// compute bit to clear for prime 17
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		i13 = mod_const_p (bit_to_clr[5] - thread_start, 13);	// compute bit to clear for prime 13
-		i17 = mod_const_p (bit_to_clr[6] - thread_start, 17);	// compute bit to clear for prime 17
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		i17 = mod_const_p (bit_to_clr[6] - thread_start, 17);	// compute bit to clear for prime 17
-	}
-	i19 = mod_const_p (bit_to_clr[7] - thread_start, 19);	// compute bit to clear for prime 19
-	i23 = mod_const_p (bit_to_clr[8] - thread_start, 23);	// compute bit to clear for prime 23
-	i29 = mod_const_p (bit_to_clr[9] - thread_start, 29);	// compute bit to clear for prime 29
-	i31 = mod_const_p (bit_to_clr[10] - thread_start, 31);	// compute bit to clear for prime 31
 
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		mask = (BITSLL11 << i11) | (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		mask = (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		mask = BITSLL17 << i17;
-	}
-	mask |= (BITSLL19 << i19) | (BITSLL23 << i23);
-	mask |= (BITSLL29 << i29) | (BITSLL31 << i31);
+        // Bit masks for small prime sieving
+        const uint32 PRIME_BITS[] = {
+                0,      // 2 is never sieved
+                0,      // 3 is never sieved
+                0,      // 5 is never sieved
+                0,      // 7 is never sieved
+                (1 | (1<<11) | (1<<22)),
+                (1 | (1<<13) | (1<<26)),
+                (1 | (1<<17)),
+                (1 | (1<<19)),
+                (1 | (1<<23)),
+                (1 | (1<<29)),
+                (1 | (1<<31)),
+        };
 
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		i11 = bump_mod_p (i11, -32, 11);
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	i19 = bump_mod_p (i19, -32, 19);
-	i23 = bump_mod_p (i23, -32, 23);
-	i29 = bump_mod_p (i29, -32, 29);
-	i31 = bump_mod_p (i31, -32, 31);
+# define add_small_prime_to_masks(p, np, BITSLLP)                       \
+        do {                                                            \
+                mask |= (BITSLLP << i[np]);                             \
+                                                                        \
+                i[np] = bump_mod_p(i[np], -32, p);                       \
+                mask2 |= (BITSLLP << i[np]);                            \
+                                                                        \
+                i[np] = bump_mod_p(i[np], -32, p);                       \
+                mask3 |= (BITSLLP << i[np]);                            \
+                                                                        \
+                i[np] = bump_mod_p(i[np], -32, p);                       \
+                mask4 |= (BITSLLP << i[np]);                            \
+        } while(0)
 
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		mask2 = (BITSLL11 << i11) | (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		mask2 = (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		mask2 = BITSLL17 << i17;
-	}
-	mask2 |= (BITSLL19 << i19) | (BITSLL23 << i23);
-	mask2 |= (BITSLL29 << i29) | (BITSLL31 << i31);
+        mask = 0; mask2 = 0; mask3 = 0; mask4 = 0;
 
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		i11 = bump_mod_p (i11, -32, 11);
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	i19 = bump_mod_p (i19, -32, 19);
-	i23 = bump_mod_p (i23, -32, 23);
-	i29 = bump_mod_p (i29, -32, 29);
-	i31 = bump_mod_p (i31, -32, 31);
+        // index of bits to remove for prime
+        uint32 i[PRIME_PI_32];
 
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		mask3 = (BITSLL11 << i11) | (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		mask3 = (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		mask3 = BITSLL17 << i17;
-	}
-	mask3 |= (BITSLL19 << i19) | (BITSLL23 << i23);
-	mask3 |= (BITSLL29 << i29) | (BITSLL31 << i31);
+        # pragma unroll
+        for(int np = primesNotSieved; np < PRIME_PI_32; np++) {
+                const uint32 p = SMALL_PRIMES[np];
+                i[np] = mod_const_p(bit_to_clr[np] - thread_start, p);
+                add_small_prime_to_masks(p, np, PRIME_BITS[np]);
+        }
 
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		i11 = bump_mod_p (i11, -32, 11);
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	i19 = bump_mod_p (i19, -32, 19);
-	i23 = bump_mod_p (i23, -32, 23);
-	i29 = bump_mod_p (i29, -32, 29);
-	i31 = bump_mod_p (i31, -32, 31);
+	locsieve32[thread_size_32 + 0] = mask;
+	locsieve32[thread_size_32 + 1] = mask2;
+	locsieve32[thread_size_32 + 2] = mask3;
+	locsieve32[thread_size_32 + 3] = mask4;
 
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		mask4 = (BITSLL11 << i11) | (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		mask4 = (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		mask4 = BITSLL17 << i17;
-	}
-	mask4 |= (BITSLL19 << i19) | (BITSLL23 << i23);
-	mask4 |= (BITSLL29 << i29) | (BITSLL31 << i31);
+        mask = 0; mask2 = 0; mask3 = 0; mask4 = 0;
 
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		i11 = bump_mod_p (i11, -32, 11);
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	i19 = bump_mod_p (i19, -32, 19);
-	i23 = bump_mod_p (i23, -32, 23);
-	i29 = bump_mod_p (i29, -32, 29);
-	i31 = bump_mod_p (i31, -32, 31);
+        # pragma unroll
+        for(int np = primesNotSieved; np < PRIME_PI_32; np++) {
+                const uint32 p = SMALL_PRIMES[np];
+                i[np] = bump_mod_p(i[np], -32, p);
+                add_small_prime_to_masks(p, np, PRIME_BITS[np]);
+        }
 
-	locsieve32[threadIdx.x * block_size / threadsPerBlock / 32 + 0] = mask;
-	locsieve32[threadIdx.x * block_size / threadsPerBlock / 32 + 1] = mask2;
-	locsieve32[threadIdx.x * block_size / threadsPerBlock / 32 + 2] = mask3;
-	locsieve32[threadIdx.x * block_size / threadsPerBlock / 32 + 3] = mask4;
+	locsieve32[thread_size_32 + 4] = mask;
+	locsieve32[thread_size_32 + 5] = mask2;
+	locsieve32[thread_size_32 + 6] = mask3;
+	locsieve32[thread_size_32 + 7] = mask4;
+	}
 
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		mask = (BITSLL11 << i11) | (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		mask = (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		mask = BITSLL17 << i17;
-	}
-	mask |= (BITSLL19 << i19) | (BITSLL23 << i23);
-	mask |= (BITSLL29 << i29) | (BITSLL31 << i31);
-
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		i11 = bump_mod_p (i11, -32, 11);
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	i19 = bump_mod_p (i19, -32, 19);
-	i23 = bump_mod_p (i23, -32, 23);
-	i29 = bump_mod_p (i29, -32, 29);
-	i31 = bump_mod_p (i31, -32, 31);
-
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		mask2 = (BITSLL11 << i11) | (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		mask2 = (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		mask2 = BITSLL17 << i17;
-	}
-	mask2 |= (BITSLL19 << i19) | (BITSLL23 << i23);
-	mask2 |= (BITSLL29 << i29) | (BITSLL31 << i31);
-
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		i11 = bump_mod_p (i11, -32, 11);
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	i19 = bump_mod_p (i19, -32, 19);
-	i23 = bump_mod_p (i23, -32, 23);
-	i29 = bump_mod_p (i29, -32, 29);
-	i31 = bump_mod_p (i31, -32, 31);
-
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		mask3 = (BITSLL11 << i11) | (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		mask3 = (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		mask3 = BITSLL17 << i17;
-	}
-	mask3 |= (BITSLL19 << i19) | (BITSLL23 << i23);
-	mask3 |= (BITSLL29 << i29) | (BITSLL31 << i31);
-
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		i11 = bump_mod_p (i11, -32, 11);
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		i13 = bump_mod_p (i13, -32, 13);
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		i17 = bump_mod_p (i17, -32, 17);
-	}
-	i19 = bump_mod_p (i19, -32, 19);
-	i23 = bump_mod_p (i23, -32, 23);
-	i29 = bump_mod_p (i29, -32, 29);
-	i31 = bump_mod_p (i31, -32, 31);
-
-	if (primesNotSieved == 4) {	// Primes 2, 3, 5, 7 are not sieved
-		mask4 = (BITSLL11 << i11) | (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 5) {	// Primes 2, 3, 5, 7, 11 are not sieved
-		mask4 = (BITSLL13 << i13) | (BITSLL17 << i17);
-	}
-	if (primesNotSieved == 6) {	// Primes 2, 3, 5, 7, 11, 13 are not sieved
-		mask4 = BITSLL17 << i17;
-	}
-	mask4 |= (BITSLL19 << i19) | (BITSLL23 << i23);
-	mask4 |= (BITSLL29 << i29) | (BITSLL31 << i31);
-
-	locsieve32[threadIdx.x * block_size / threadsPerBlock / 32 + 4] = mask;
-	locsieve32[threadIdx.x * block_size / threadsPerBlock / 32 + 5] = mask2;
-	locsieve32[threadIdx.x * block_size / threadsPerBlock / 32 + 6] = mask3;
-	locsieve32[threadIdx.x * block_size / threadsPerBlock / 32 + 7] = mask4;
-
+        {
 	// The following handles primes, 32 < p < 64.  Each prime hits 0 or 1 32-bit words.
 
+        uint32 mask;
+        uint32 i37, i41, i43, i47, i53, i59, i61;
 	i37 = mod_const_p (bit_to_clr[11] - thread_start, 37);	// compute bit to clear for prime 37
 	i41 = mod_const_p (bit_to_clr[12] - thread_start, 41);	// compute bit to clear for prime 41
 	i43 = mod_const_p (bit_to_clr[13] - thread_start, 43);	// compute bit to clear for prime 43
@@ -546,12 +370,10 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 	i61 = mod_const_p (bit_to_clr[17] - thread_start, 61);	// compute bit to clear for prime 61
 
 	for (j = 0; ; ) {
-		mask = 1 << i37;
-		mask |= (1 << i41) | (1 << i43);
-		mask |= (1 << i47) | (1 << i53);
-		mask |= (1 << i59) | (1 << i61);
+		mask  = (1 << i37) | (1 << i41) | (1 << i43);
+		mask |= (1 << i47) | (1 << i53) | (1 << i59) | (1 << i61);
 
-		locsieve32[threadIdx.x * block_size / threadsPerBlock / 32 + j] |= mask;
+		locsieve32[thread_size_32 + j] |= mask;
 
 		j++;
 		if (j == block_size / threadsPerBlock / 32) break;
@@ -564,7 +386,7 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 		i59 = bump_mod_p (i59, -32, 59);
 		i61 = bump_mod_p (i61, -32, 61);
 	}
-	}
+        }
 
 	// The following handles primes 64 < p < 128.
 	// Each thread handles one 64-bit word of the 256-bit section of shared memory.
@@ -588,7 +410,7 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 		mask |= ((uint64) 1 << i79) | ((uint64) 1 << i83);
 		mask |= ((uint64) 1 << i89) | ((uint64) 1 << i97);
 
-		locsieve64[threadIdx.x * block_size / threadsPerBlock / 64 + j] |= mask;
+		locsieve64[thread_size_64 + j] |= mask;
 
 		j++;
 		if (j == block_size / threadsPerBlock / 64) break;
@@ -615,7 +437,7 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 		mask |= ((uint64) 1 << i109) | ((uint64) 1 << i113);
 		mask |= (uint64) 1 << i127;
 
-		locsieve64[threadIdx.x * block_size / threadsPerBlock / 64 + j] |= mask;
+		locsieve64[thread_size_64 + j] |= mask;
 
 		j++;
 		if (j == block_size / threadsPerBlock / 64) break;
@@ -653,8 +475,8 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 		mask2 |= ((uint64) 1 << (i139 - 64)) | ((uint64) 1 << (i149 - 64));
 		mask2 |= ((uint64) 1 << (i151 - 64)) | ((uint64) 1 << (i157 - 64));
 
-		locsieve64[threadIdx.x * block_size / threadsPerBlock / 64 + j * 2] |= mask1;
-		locsieve64[threadIdx.x * block_size / threadsPerBlock / 64 + j * 2 + 1] |= mask2;
+		locsieve64[thread_size_64 + j * 2] |= mask1;
+		locsieve64[thread_size_64 + j * 2 + 1] |= mask2;
 
 		j++;
 		if (j == block_size / threadsPerBlock / 128) break;
@@ -682,8 +504,8 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 		mask2 |= ((uint64) 1 << (i173 - 64)) | ((uint64) 1 << (i179 - 64));
 		mask2 |= ((uint64) 1 << (i181 - 64)) | ((uint64) 1 << (i191 - 64));
 
-		locsieve64[threadIdx.x * block_size / threadsPerBlock / 64 + j * 2] |= mask1;
-		locsieve64[threadIdx.x * block_size / threadsPerBlock / 64 + j * 2 + 1] |= mask2;
+		locsieve64[thread_size_64 + j * 2] |= mask1;
+		locsieve64[thread_size_64 + j * 2 + 1] |= mask2;
 
 		j++;
 		if (j == block_size / threadsPerBlock / 128) break;
@@ -711,8 +533,8 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 		mask2 |= ((uint64) 1 << (i199 - 64)) | ((uint64) 1 << (i211 - 64));
 		mask2 |= ((uint64) 1 << (i223 - 64)) | ((uint64) 1 << (i227 - 64));
 
-		locsieve64[threadIdx.x * block_size / threadsPerBlock / 64 + j * 2] |= mask1;
-		locsieve64[threadIdx.x * block_size / threadsPerBlock / 64 + j * 2 + 1] |= mask2;
+		locsieve64[thread_size_64 + j * 2] |= mask1;
+		locsieve64[thread_size_64 + j * 2 + 1] |= mask2;
 
 		j++;
 		if (j == block_size / threadsPerBlock / 128) break;
@@ -739,8 +561,8 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 		mask2 |= ((uint64) 1 << (i233 - 64)) | ((uint64) 1 << (i239 - 64));
 		mask2 |= ((uint64) 1 << (i241 - 64)) | ((uint64) 1 << (i251 - 64));
 
-		locsieve64[threadIdx.x * block_size / threadsPerBlock / 64 + j * 2] |= mask1;
-		locsieve64[threadIdx.x * block_size / threadsPerBlock / 64 + j * 2 + 1] |= mask2;
+		locsieve64[thread_size_64 + j * 2] |= mask1;
+		locsieve64[thread_size_64 + j * 2 + 1] |= mask2;
 
 		j++;
 		if (j == block_size / threadsPerBlock / 128) break;
