@@ -4,12 +4,12 @@ CUDA_INCLUDE = -I$(CUDA_DIR)/include/
 CUDA_LIB = -L$(CUDA_DIR)/lib64/
 
 # Compiler settings for .c files (CPU)
-CC = gcc
+CC = gcc-6
 CFLAGS = -Wall -Wextra -O2 $(CUDA_INCLUDE) -malign-double
 CFLAGS_EXTRA_SIEVE = -funroll-all-loops
 
 # Compiler settings for .cu files (CPU/GPU)
-NVCC = nvcc
+NVCC = $(CUDA_DIR)/bin/nvcc
 NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v
 
 # generate code for various compute capabilities
@@ -24,7 +24,7 @@ NVCCFLAGS += --generate-code arch=compute_61,code=sm_61 # CC 1.1, 1.2 and 1.3 GP
 NVCCFLAGS += --compiler-options=-Wall
 
 # Linker
-LD = gcc
+LD = gcc-6
 LDFLAGS = -fPIC $(CUDA_LIB) -lcudart -lm -lstdc++
 
 ##############################################################################
