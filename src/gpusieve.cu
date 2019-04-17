@@ -6,15 +6,15 @@ Thanks go to Ben Buhrow for his erato.cu program and to Rocke Verser for his gpu
 See (http://www.mersenneforum.org/showthread.php?t=11900) for Ben's initial work.
 
 You are free to use this code as you wish; I take no reponsibility for
-any such action.  Optionally, please be nice and tell me if you find this 
-source to be useful, or add an acknowledgement within your work. Again optionally, 
-if you add to the functionality present here please consider making those 
-additions public too, so that others may benefit from your work.	
+any such action.  Optionally, please be nice and tell me if you find this
+source to be useful, or add an acknowledgement within your work. Again optionally,
+if you add to the functionality present here please consider making those
+additions public too, so that others may benefit from your work.
 */
 
 #include <stdio.h>
 #include <cuda.h>
-#include <cuda_runtime.h>  
+#include <cuda_runtime.h>
 
 #include "params.h"
 #include "my_types.h"
@@ -232,10 +232,10 @@ __device__ __inline static void bitOrSometimesIffy (uint8 *locsieve, uint32 bclr
 // OK as it will just cost us some extra testing of candidates which is cheaper than the cost of using
 // atomic operations.
 
-/* 
+/*
 	Expect as input a set of primes to sieve with, their inverses, and the first bit to clear.
 
-	Each block on the gpu sieves a different segment of the big bit array.  Each thread within each block 
+	Each block on the gpu sieves a different segment of the big bit array.  Each thread within each block
 	simultaneously sieves a small set of primes, marking composites within shared memory.  There is no memory
 	contention between threads because the marking process is write only.  Because each thread
 	block starts at a different part of the big bit array, a small amount of computation must
@@ -1204,7 +1204,7 @@ __global__ static void __launch_bounds__(256,6) CalcBitToClear (uint32 exponent,
 	else {
 		*pinfo32 = (*pinfo32 & mask) + bit_to_clear;
 	}
-}	
+}
 
 //
 // Sieve initialization done on the CPU
@@ -1279,7 +1279,7 @@ static	int	gpusieve_initialized = 0;
 	// Quick hack to eliminate sieve time from GPU-code benchmarks.  Can also be used
 	// to isolate a bug by eliminating the GPU sieving code as a possible cause.
 	checkCudaErrors (cudaMemset (mystuff->d_bitarray, 0xFF, mystuff->gpu_sieve_size / 8));
-#endif  
+#endif
 
 #undef pinfo32
 #define pinfo32		((uint32 *) pinfo)
@@ -1588,7 +1588,7 @@ static uint32	last_exponent_initialized = 0;
 	// Quick hack (leave bit array set to all ones) to eliminate sieve time from GPU-code benchmarks.
 	// Can also be used to isolate a bug by eliminating the GPU sieving code as a possible cause.
 	return;
-#endif  
+#endif
 
 	// If we've already initialized this exponent, return
 	if (mystuff->exponent == last_exponent_initialized) return;
@@ -1610,7 +1610,7 @@ void gpusieve_init_class (mystuff_t *mystuff, unsigned long long k_min)
 	// Quick hack (leave bit array set to all ones) to eliminate sieve time from GPU-code benchmarks.
 	// Can also be used to isolate a bug by eliminating the GPU sieving code as a possible cause.
 	return;
-#endif  
+#endif
 
 	k_base.d0 =  (int) (k_min & 0xFFFFFFFF);
 	k_base.d1 =  (int) (k_min >> 32);
@@ -1632,7 +1632,7 @@ void gpusieve (mystuff_t *mystuff, unsigned long long num_k_remaining)
 	// Quick hack (leave bit array set to all ones) to eliminate sieve time from GPU-code benchmarks.
 	// Can also be used to isolate a bug by eliminating the GPU sieving code as a possible cause.
 	return;
-#endif  
+#endif
 
 	// Sieve at most 128 million k values.
 	if ((unsigned long long) mystuff->gpu_sieve_size < num_k_remaining)
