@@ -11,14 +11,14 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
 #include <cuda.h>
-#include <cuda_runtime.h>  
+#include <cuda_runtime.h>
 
 #include "params.h"
 #include "my_types.h"
@@ -101,16 +101,16 @@ __device__ static void square_72_144(int144 *res, int72 a)
 {
   res->d0  =  __umul24(a.d0, a.d0)       & 0xFFFFFF;
   res->d1  =  __umul24hi(a.d0, a.d0) >> 8;
-  
+
   res->d1 += (__umul24(a.d1, a.d0) << 1) & 0xFFFFFF;
   res->d2  =  __umul24hi(a.d1, a.d0) >> 7;
 
   res->d2 += (__umul24(a.d2, a.d0) << 1) & 0xFFFFFF;
   res->d3  =  __umul24hi(a.d2, a.d0) >> 7;
-  
+
   res->d2 +=  __umul24(a.d1, a.d1)       & 0xFFFFFF;
   res->d3 +=  __umul24hi(a.d1, a.d1) >> 8;
-  
+
   res->d3 += (__umul24(a.d2, a.d1) << 1) & 0xFFFFFF;
   res->d4  =  __umul24hi(a.d2, a.d1) >> 7;
 
@@ -138,16 +138,16 @@ __device__ static void square_72_144_shl(int144 *res, int72 a)
 {
   res->d0  = (__umul24(a.d0, a.d0) << 1) & 0xFFFFFF;
   res->d1  =  __umul24hi(a.d0, a.d0) >> 7;
-  
+
   res->d1 += (__umul24(a.d1, a.d0) << 2) & 0xFFFFFF;
   res->d2  =  __umul24hi(a.d1, a.d0) >> 6;
 
   res->d2 += (__umul24(a.d2, a.d0) << 2) & 0xFFFFFF;
   res->d3  =  __umul24hi(a.d2, a.d0) >> 6;
-  
+
   res->d2 += (__umul24(a.d1, a.d1) << 1) & 0xFFFFFF;
   res->d3 +=  __umul24hi(a.d1, a.d1) >> 7;
-  
+
   res->d3 += (__umul24(a.d2, a.d1) << 2) & 0xFFFFFF;
   res->d4  =  __umul24hi(a.d2, a.d1) >> 6;
 
@@ -207,7 +207,7 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
 /* do carry */
   nn.d4 += nn.d3 >> 24; nn.d3 &= 0xFFFFFF;
   nn.d5 += nn.d4 >> 24; nn.d4 &= 0xFFFFFF;
-  
+
   MODBASECASE_VALUE_BIG_ERROR(0xFFFFFF, "nn.d5", 1, nn.d5, 1);
 
 /*  q = q - nn */
@@ -241,20 +241,20 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
   #ifdef DEBUG_GPU_MATH
   nn.d5=0;
   #endif
-  
+
 /* do carry */
   nn.d3 += nn.d2 >> 24; nn.d2 &= 0xFFFFFF;
   nn.d4 += nn.d3 >> 24; nn.d3 &= 0xFFFFFF;
 #ifdef DEBUG_GPU_MATH
   nn.d5 += nn.d4 >> 24; nn.d4 &= 0xFFFFFF;
-#endif  
+#endif
 
 /* q = q - nn */
 /* subtraction using sub.cc.u32, subc.cc.u32 and subc.u32 instructions */
   q.d1 = __sub_cc (q.d1, nn.d1) & 0xFFFFFF;
   q.d2 = __subc_cc(q.d2, nn.d2) & 0xFFFFFF;
   q.d3 = __subc_cc(q.d3, nn.d3) & 0xFFFFFF;
-#ifndef DEBUG_GPU_MATH  
+#ifndef DEBUG_GPU_MATH
   q.d4 = __subc   (q.d4, nn.d4) & 0xFFFFFF;
 #else
   q.d4 = __subc_cc(q.d4, nn.d4) & 0xFFFFFF;
@@ -284,13 +284,13 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
 #ifdef DEBUG_GPU_MATH
   nn.d4 =                           nn.d3>>13;
   nn.d3 = ((nn.d3 & 0x1FFF)<<11) + (nn.d2>>13);
-#else  
+#else
   nn.d3 = ( nn.d3          <<11) + (nn.d2>>13);	// we don't need to clear top bits here, this is done during q = q - nn
-#endif  
+#endif
   nn.d2 = ((nn.d2 & 0x1FFF)<<11) + (nn.d1>>13);
   nn.d1 = ((nn.d1 & 0x1FFF)<<11) + (nn.d0>>13);
   nn.d0 = ((nn.d0 & 0x1FFF)<<11);
-  
+
 /*  q = q - nn */
 /* subtraction using sub.cc.u32, subc.cc.u32 and subc.u32 instructions */
   q.d0 = __sub_cc (q.d0, nn.d0) & 0xFFFFFF;
@@ -311,14 +311,14 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
   qf= qf * 16777216.0f + __uint2float_rn(q.d2);
   qf= qf * 16777216.0f + __uint2float_rn(q.d1);
   qf= qf * 16777216.0f + __uint2float_rn(q.d0);
-  
+
   qi=__float2uint_rz(qf*nf);
 
   MODBASECASE_QI_ERROR(1<<22, 4, qi, 7);
 
   nn.d0 =                                      __umul24(n.d0, qi)               & 0xFFFFFF;
   nn.d1 = __add_cc (__umul24hi(n.d0, qi) >> 8, __umul24(n.d1, qi) | 0xFF000000) & 0xFFFFFF;
-#ifndef DEBUG_GPU_MATH  
+#ifndef DEBUG_GPU_MATH
   nn.d2 = __addc   (__umul24hi(n.d1, qi) >> 8, __umul24(n.d2, qi));
 #else
   nn.d2 = __addc_cc(__umul24hi(n.d1, qi) >> 8, __umul24(n.d2, qi) | 0xFF000000) & 0xFFFFFF;
@@ -329,7 +329,7 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
 /* subtraction using sub.cc.u32, subc.cc.u32 and subc.u32 instructions */
   q.d0 = __sub_cc (q.d0, nn.d0) & 0xFFFFFF;
   q.d1 = __subc_cc(q.d1, nn.d1) & 0xFFFFFF;
-#ifndef DEBUG_GPU_MATH  
+#ifndef DEBUG_GPU_MATH
   q.d2 = __subc   (q.d2, nn.d2) & 0xFFFFFF;
 #else
   q.d2 = __subc_cc(q.d2, nn.d2) & 0xFFFFFF;
@@ -379,7 +379,7 @@ a is precomputed on host ONCE. */
   k.d1 += a.d1;
   k.d1 += k.d0 >> 24; k.d0 &= 0xFFFFFF;
   k.d2 += k.d1 >> 24; k.d1 &= 0xFFFFFF;		// k = k + k_tab[index] * NUM_CLASSES
-        
+
   mul_72(&f,k,exp72);				// f = 2 * k * exp
   f.d0 += 1;					// f = 2 * k * exp + 1
 
@@ -391,12 +391,12 @@ Precalculated here since it is the same for all steps in the following loop */
   ff= ff * 16777216.0f + __uint2float_rn(f.d0);
 
   ff=__int_as_float(0x3f7ffffb) / ff;	// just a little bit below 1.0f so we allways underestimate the quotient
-        
+
 #ifndef DEBUG_GPU_MATH
   mod_144_72(&a,b,f,ff);			// a = b mod f
 #else
   mod_144_72(&a,b,f,ff,modbasecase_debug);	// a = b mod f
-#endif    
+#endif
   exp<<= 32 - shiftcount;
   while(exp)
   {
@@ -406,7 +406,7 @@ Precalculated here since it is the same for all steps in the following loop */
     mod_144_72(&a,b,f,ff);			// a = b mod f
 #else
     mod_144_72(&a,b,f,ff,modbasecase_debug);	// a = b mod f
-#endif    
+#endif
     exp<<=1;
   }
 

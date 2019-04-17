@@ -921,6 +921,7 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 //
 
 // Internal routine to compute 1/n mod d using extended Euclid GCD
+// TODO is EGCD faster than BGCD or LGCD?
 
 __device__ unsigned int modularinverse (uint32 n, uint32 orig_d)
 {
@@ -1080,7 +1081,7 @@ void tiny_soe (uint32 limit, uint32 *primes)
 		}
 	}
 
-	//now find the rest of the prime flags and compute the sieving primes
+	// now find the rest of the prime flags and compute the sieving primes
 	for ( ; it < limit; i++) {
 		if (flags[i] == 1) {
 			primes[it] = (uint32) (2*i + 1);
