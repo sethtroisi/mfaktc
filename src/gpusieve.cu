@@ -122,6 +122,21 @@ inline void __checkCudaErrors(cudaError err, const char *file, const int line )
 //	x mod p out of range!! x = 130810, p = 130811, pinv = 32834, r = -1
 //	x mod p out of range!! x = 116705, p = 116707, pinv = 36802, r = -2
 
+// ^ all of these cases happen because q = 1 because of the + 1 on pinv
+// the solution is to either check a < 0 and add p or something
+
+// x = p*q + r
+// pinv = 2^32  - 1 // p + 1
+//
+// x - (x * pinv // 2^32) * p
+// x - (x * ((2^32 - 1) // p + 1) // 2^32) * p
+// x - ((p*q+r) * ((2^32 - 1) // p + 1) // 2^32) * p
+// x - (q * ((2^32 - 1) + 1) // 2^32) * p
+// x - (q * 2^32 - q + 1) // 2^32) * p
+// x - (q * p)
+// p*q + r - (q*p)
+// r
+
 #define gen_pinv(p)	(0xFFFFFFFF / (p) + 1)
 
 __device__ __inline static int mod_p (int x, int p, int pinv)
