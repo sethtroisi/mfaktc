@@ -245,7 +245,7 @@ one. Sometimes the result is a little bit bigger than n
 }
 
 
-__device__ static void test_FC96_mfaktc_95(int96 f, int192 b, unsigned int exp, unsigned int *RES, unsigned int *SMALL_K, int shiftcount
+__device__ static void test_FC96_mfaktc_95(int96 f, int192 b, unsigned int exp, unsigned int *RES, unsigned int *PROOF_K, int shiftcount
 #ifdef DEBUG_GPU_MATH
                                            , unsigned int *modbasecase_debug
 #endif
@@ -299,15 +299,15 @@ Precalculated here since it is the same for all steps in the following loop */
 
 /* finally check if we found a factor and write the factor to RES[]
 this kernel has a lower FC limit of 2^64 so we can use check_big_factor96() */
-  check_factor96(f, a, RES, SMALL_K);
+  check_factor96(f, a, RES, PROOF_K);
 }
 
 
 __global__ void
 #ifdef SHORTCUT_75BIT
-__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_75(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, unsigned int *SMALL_K
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_75(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, unsigned int *PROOF_K
 #else
-__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, unsigned int *SMALL_K
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, unsigned int *PROOF_K
 #endif
 #ifdef DEBUG_GPU_MATH
                                                  , unsigned int *modbasecase_debug
@@ -323,7 +323,7 @@ a is precomputed on host ONCE. */
 
   create_FC96_mad(&f, exp, k, k_tab[index]);    // f = 2 * (k + k_tab[index]) * exp + 1
 
-  test_FC96_mfaktc_95(f, b, exp, RES, SMALL_K, shiftcount
+  test_FC96_mfaktc_95(f, b, exp, RES, PROOF_K, shiftcount
 #ifdef DEBUG_GPU_MATH
                       , modbasecase_debug
 #endif
@@ -334,9 +334,9 @@ a is precomputed on host ONCE. */
 
 __global__ void
 #ifdef SHORTCUT_75BIT
-__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_75_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b, unsigned int *RES, unsigned int *SMALL_K
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_75_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b, unsigned int *RES, unsigned int *PROOF_K
 #else
-__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b, unsigned int *RES, unsigned int *SMALL_K
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b, unsigned int *RES, unsigned int *PROOF_K
 #endif
 #ifdef DEBUG_GPU_MATH
                                                  , unsigned int *modbasecase_debug
@@ -366,7 +366,7 @@ a is precomputed on host ONCE. */
     f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
     f.d2 = __addc   (f_base.d2, 0);
 
-    test_FC96_mfaktc_95(f, b, exp, RES, SMALL_K, shiftcount
+    test_FC96_mfaktc_95(f, b, exp, RES, PROOF_K, shiftcount
 #ifdef DEBUG_GPU_MATH
                         , modbasecase_debug
 #endif

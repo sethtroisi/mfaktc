@@ -17,6 +17,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "gpusieve.h"
+#include "output.h"
 
 #undef RAW_GPU_BENCH // FIXME
 
@@ -52,14 +53,12 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
   #endif
 #endif
 {
-  int i;
   timeval timer;
-  int96 factor,k_base,small_k;
+  int96 k_base;
   int192 b_preinit;
   int shiftcount, ln2b, count = 0;
   int numblocks;
   unsigned long long k_remaining;
-  char string[50];
   int shared_mem_required;
   int factorsfound = 0;
 
@@ -96,7 +95,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 
 /* set result array to 0 */
   cudaMemset(mystuff->d_RES, 0, 1*sizeof(int)); //first int of result array contains the number of factors found
-  cudaMemset(mystuff->d_SMALL_K, 0, 128*sizeof(int));
+  cudaMemset(mystuff->d_PROOF_K, 0, 128*sizeof(int));
 
 #ifdef DEBUG_GPU_MATH
   cudaMemset(mystuff->d_modbasecase_debug, 0, 32*sizeof(int));
@@ -158,7 +157,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
     // Now let the GPU trial factor the candidates that survived the sieving
 
     MFAKTC_FUNC<<<numblocks, THREADS_PER_BLOCK, shared_mem_required>>>(mystuff->exponent, k_base, mystuff->d_bitarray, mystuff->gpu_sieve_processing_size, shiftcount, b_preinit,
-                                                                       mystuff->d_RES, mystuff->d_SMALL_K
+                                                                       mystuff->d_RES, mystuff->d_PROOF_K
 #if defined (TF_BARRETT) && (defined(TF_BARRETT_87BIT_GS) || defined(TF_BARRETT_88BIT_GS) || defined(TF_BARRETT_92BIT_GS) || defined(DEBUG_GPU_MATH))
                                                                        , mystuff->bit_min-63
 #endif
@@ -185,7 +184,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 
 /* download results from GPU */
   cudaMemcpy(mystuff->h_RES, mystuff->d_RES, 32*sizeof(int), cudaMemcpyDeviceToHost);
-  cudaMemcpy(mystuff->h_SMALL_K, mystuff->d_SMALL_K, 128*sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy(mystuff->h_PROOF_K, mystuff->d_PROOF_K, 128*sizeof(int), cudaMemcpyDeviceToHost);
 
 #ifdef DEBUG_GPU_MATH
   cudaMemcpy(mystuff->h_modbasecase_debug, mystuff->d_modbasecase_debug, 32*sizeof(int), cudaMemcpyDeviceToHost);
@@ -211,41 +210,9 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
   print_status_line(mystuff);
 
   // Print out any found factors
-  // TODO(sethtroisi): Unify with tf_common.cu in output.c
+  print_results(mystuff, 0 /* is_72bit */);
+
   factorsfound=mystuff->h_RES[0];
-  for(i=0; (i<factorsfound) && (i<10); i++)
-  {
-    factor.d2=mystuff->h_RES[i*3 + 1];
-    factor.d1=mystuff->h_RES[i*3 + 2];
-    factor.d0=mystuff->h_RES[i*3 + 3];
-    print_dez96(factor,string);
-    print_factor(mystuff, i, string);
-  }
-  if(factorsfound>=10)
-  {
-    print_factor(mystuff, factorsfound, NULL);
-  }
-
-  if(factorsfound == 0) {
-    for(int i = 1; i <= 32; i++) {
-      int found_small_i = mystuff->h_SMALL_K[4 * i];
-      if(found_small_i) {
-        printf("small_k(%d): %d\n", i, found_small_i);
-        small_k.d2=mystuff->h_SMALL_K[4 * i + 1];
-        small_k.d1=mystuff->h_SMALL_K[4 * i + 2];
-        small_k.d0=mystuff->h_SMALL_K[4 * i + 3];
-    #ifdef TF_72BIT
-        print_dez72(small_k,string);
-    #endif
-    #if defined(TF_96BIT) || defined(TF_BARRETT)
-        print_dez96(small_k,string);
-    #endif
-        print_small_k(mystuff, string, i);
-        break;
-      }
-    }
-  }
-
   return factorsfound;
 }
 

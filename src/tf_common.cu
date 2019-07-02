@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "output.h"
 
 #ifdef TF_72BIT
 extern "C" __host__ int tf_class_71(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
@@ -58,17 +59,17 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
   timeval timer;
   timeval timer2;
   unsigned long long int twait = 0;
+  int is_72bit = 1;
 #ifdef TF_72BIT
-  int72 factor,k_base,small_k;
+  int72 k_base;
   int144 b_preinit;
-#endif
-#if defined(TF_96BIT) || defined(TF_BARRETT)
-  int96 factor,k_base,small_k;
+#elif defined(TF_96BIT) || defined(TF_BARRETT)
+  int96 k_base;
   int192 b_preinit;
+  is_72bit = 0;
 #endif
   int shiftcount, ln2b, count = 0;
   unsigned long long int k_diff;
-  char string[50];
   int factorsfound = 0;
 
   int h_ktab_index = 0;
@@ -123,7 +124,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 
 /* set result array to 0 */
   cudaMemsetAsync(mystuff->d_RES, 0, 1*sizeof(int)); //first int of result array contains the number of factors found
-  cudaMemsetAsync(mystuff->d_SMALL_K, 0, 128*sizeof(int));
+  cudaMemsetAsync(mystuff->d_PROOF_K, 0, 128*sizeof(int));
 
 //  for(i=0;i<32;i++)mystuff->h_RES[i]=0;
 //  cudaMemcpy(mystuff->d_RES, mystuff->h_RES, 32*sizeof(int), cudaMemcpyHostToDevice);
@@ -203,7 +204,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 #endif
 
         MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit,
-                                                                                    mystuff->d_RES, mystuff->d_SMALL_K
+                                                                                    mystuff->d_RES, mystuff->d_PROOF_K
 #if defined (TF_BARRETT) && (defined(TF_BARRETT_87BIT) || defined(TF_BARRETT_88BIT) || defined(TF_BARRETT_92BIT) || defined(DEBUG_GPU_MATH))
                                                                                     , mystuff->bit_min-63
 #endif
@@ -247,7 +248,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 
 /* download results from GPU */
   cudaMemcpy(mystuff->h_RES, mystuff->d_RES, 32*sizeof(int), cudaMemcpyDeviceToHost);
-  cudaMemcpy(mystuff->h_SMALL_K, mystuff->d_SMALL_K, 128*sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy(mystuff->h_PROOF_K, mystuff->d_PROOF_K, 128*sizeof(int), cudaMemcpyDeviceToHost);
 
 #ifdef DEBUG_GPU_MATH
   cudaMemcpy(mystuff->h_modbasecase_debug, mystuff->d_modbasecase_debug, 32*sizeof(int), cudaMemcpyDeviceToHost);
@@ -282,44 +283,9 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
     }
   }
 
+  print_results(mystuff, is_72bit);
 
   factorsfound=mystuff->h_RES[0];
-  for(i=0; (i<factorsfound) && (i<10); i++)
-  {
-    factor.d2=mystuff->h_RES[i*3 + 1];
-    factor.d1=mystuff->h_RES[i*3 + 2];
-    factor.d0=mystuff->h_RES[i*3 + 3];
-#ifdef TF_72BIT
-    print_dez72(factor,string);
-#endif
-#if defined(TF_96BIT) || defined(TF_BARRETT)
-    print_dez96(factor,string);
-#endif
-    print_factor(mystuff, i, string);
-  }
-  if(factorsfound>=10)
-  {
-    print_factor(mystuff, factorsfound, NULL);
-  }
-
-  if(factorsfound == 0) {
-    for(int i = 1; i <= 32; i++) {
-      int found_small_i = mystuff->h_SMALL_K[4 * i];
-      if(found_small_i) {
-        small_k.d2=mystuff->h_SMALL_K[4 * i + 1];
-        small_k.d1=mystuff->h_SMALL_K[4 * i + 2];
-        small_k.d0=mystuff->h_SMALL_K[4 * i + 3];
-    #ifdef TF_72BIT
-        print_dez72(small_k,string);
-    #endif
-    #if defined(TF_96BIT) || defined(TF_BARRETT)
-        print_dez96(small_k,string);
-    #endif
-        print_small_k(mystuff, string, i);
-      }
-    }
-  }
-
   return factorsfound;
 }
 

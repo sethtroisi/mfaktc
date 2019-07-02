@@ -358,9 +358,9 @@ one. Sometimes the result is a little bit bigger than n
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_71(unsigned int exp, int72 k, unsigned int *k_tab, int shiftcount, int144 b, unsigned int *RES, unsigned int *SMALL_K)
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_71(unsigned int exp, int72 k, unsigned int *k_tab, int shiftcount, int144 b, unsigned int *RES, unsigned int *PROOF_K)
 #else
-__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_71(unsigned int exp, int72 k, unsigned int *k_tab, int shiftcount, int144 b, unsigned int *RES, unsigned int *SMALL_K, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_71(unsigned int exp, int72 k, unsigned int *k_tab, int shiftcount, int144 b, unsigned int *RES, unsigned int *PROOF_K, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -440,21 +440,24 @@ Precalculated here since it is the same for all steps in the following loop */
       }
     }
   }
-  if((a.d2|a.d1)==0 && a.d0<=100024) {
+  if((a.d2|a.d1)==0) {
+#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
+    if (0)
       printf("72bit: %d,%d,%d | %d,%d,%d\n", f.d2, f.d1, f.d0, a.d2,a.d1,a.d0);
-//    int res = a.d0;
-//    for (int i = 1; i <= 10; i++, res >>= 1) {
-//      if (res <= 1) {
+#endif
+    int res = a.d0;
+    for (int i = 1; i <= 32; i++, res >>= 1) {
+      if (res <= 1) {
         int found;
-        int i = 0;
-        found = atomicInc(&SMALL_K[4 * i], 10000);
-        if (found == 1) {
-          SMALL_K[4 * i + 1] = f.d2;
-          SMALL_K[4 * i + 2] = f.d1;
-          SMALL_K[4 * i + 3] = f.d0;
+        found = atomicInc(&PROOF_K[4 * i], 10000);
+        if (found == 0) {
+          PROOF_K[4 * i + 1] = f.d2;
+          PROOF_K[4 * i + 2] = f.d1;
+          PROOF_K[4 * i + 3] = f.d0;
         }
-//      }
-//    }
+        break;
+      }
+    }
   }
 }
 

@@ -29,8 +29,12 @@ void print_dez192(int192 a, char *buf);
 
 void print_status_line(mystuff_t *mystuff);
 void print_result_line(mystuff_t *mystuff, int factorsfound);
-void print_factor(mystuff_t *mystuff, int factor_number, char *factor);
-void print_small_k(mystuff_t *mystuff, char *small_k, int bits);
+
+void print_results(mystuff_t *mystuff, int is_72bit);
+//void print_factor(mystuff_t *mystuff, int factor_number, char *factor);
+//void print_proof_k(mystuff_t *mystuff, char *proof_k, int bits);
+
+
 double primenet_ghzdays(unsigned int exp, int bit_min, int bit_max);
 #if defined(NVCC_EXTERN) && !defined(_MSC_VER)
 }

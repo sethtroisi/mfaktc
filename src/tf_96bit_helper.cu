@@ -17,7 +17,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-__device__ static void check_factor96(int96 f, int96 a, unsigned int *RES, unsigned int *SMALL_K)
+__device__ static void check_factor96(int96 f, int96 a, unsigned int *RES, unsigned int *PROOF_K)
 /* Check whether f is a factor or not. If f != 1 and a == 1 then f is a factor,
 in this case f is written into the RES array. */
 {
@@ -41,26 +41,30 @@ in this case f is written into the RES array. */
   }
 
   if((a.d2|a.d1)==0) {
-    printf("96bit: %u,%u,%u | %u,%u,%u |\n\n",
-        f.d2, f.d1, f.d0,
-        a.d2, a.d1, a.d0);
-    int res = a.d0;
+//#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
+    if (0)
+      printf("96bit: %u,%u,%u | %u,%u,%u |\n\n",
+          f.d2, f.d1, f.d0,
+          a.d2, a.d1, a.d0);
+//#endif
+    unsigned int res = a.d0;
     for (int i = 1; i <= 32; i++, res >>= 1) {
       if (res <= 1) {
         int found;
-        found = atomicInc(&SMALL_K[4 * i], 10000);
+        found = atomicInc(&PROOF_K[4 * i], 10000);
         if (found == 0) {
-          SMALL_K[4 * i + 1] = f.d2;
-          SMALL_K[4 * i + 2] = f.d1;
-          SMALL_K[4 * i + 3] = f.d0;
+          PROOF_K[4 * i + 1] = f.d2;
+          PROOF_K[4 * i + 2] = f.d1;
+          PROOF_K[4 * i + 3] = f.d0;
         }
+        break;
       }
     }
   }
 }
 
 
-__device__ static void check_big_factor96(int96 f, int96 a, unsigned int *RES, unsigned int *SMALL_K)
+__device__ static void check_big_factor96(int96 f, int96 a, unsigned int *RES, unsigned int *PROOF_K)
 /* Similar to check_factor96() but without checking f != 1. This is a little
 bit faster but only safe for kernel which have a lower limit well above 1. The
 barrett based kernels have a lower limit of 2^64 so this function is used
@@ -83,19 +87,23 @@ there. */
   }
 
   if((a.d2|a.d1)==0) {
-    printf("big 96bit: %u,%u,%u | %u,%u,%u |\n\n",
-        f.d2, f.d1, f.d0,
-        a.d2, a.d1, a.d0);
-    int res = a.d0;
+//#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
+    if (0)
+      printf("big 96bit: %u,%u,%u | %u,%u,%u |\n\n",
+          f.d2, f.d1, f.d0,
+          a.d2, a.d1, a.d0);
+//#endif
+    unsigned int res = a.d0;
     for (int i = 1; i <= 32; i++, res >>= 1) {
       if (res <= 1) {
         int found;
-        found = atomicInc(&SMALL_K[4 * i], 10000);
+        found = atomicInc(&PROOF_K[4 * i], 10000);
         if (found == 0) {
-          SMALL_K[4 * i + 1] = f.d2;
-          SMALL_K[4 * i + 2] = f.d1;
-          SMALL_K[4 * i + 3] = f.d0;
+          PROOF_K[4 * i + 1] = f.d2;
+          PROOF_K[4 * i + 2] = f.d1;
+          PROOF_K[4 * i + 3] = f.d0;
         }
+        break;
       }
     }
   }
@@ -233,7 +241,7 @@ are "out of range".
 }
 
 
-__device__ static void mod_simple_96_and_check_big_factor96(int96 q, int96 n, float nf, unsigned int *RES, unsigned int *SMALL_K)
+__device__ static void mod_simple_96_and_check_big_factor96(int96 q, int96 n, float nf, unsigned int *RES, unsigned int *PROOF_K)
 /*
 This function is a combination of mod_simple_96(), check_big_factor96() and an additional correction step.
 If q mod n == 1 then n is a factor and written into the RES array.
@@ -305,16 +313,20 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
     // Possible one two high because of carry below.
     res_top = __subc   (q.d2, nn.d2);
 
-    int i = atomicInc(&SMALL_K[0], 10000);
-    if (i <= 20) {
-      printf("mod check 96bit: %u,%u,%u | %u,%u,%u | %u | %u, %u|\n\n",
-          n.d2, n.d1, n.d0,
-          q.d2, q.d1, q.d0,
-          qi,
-          res_top, res);
-      SMALL_K[4 * i + 1] = n.d2;
-      SMALL_K[4 * i + 2] = n.d1;
-      SMALL_K[4 * i + 3] = n.d0;
+    int i = atomicInc(&PROOF_K[0], 10000);
+    if (i <= 10) {
+  //#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
+      if (0)
+        printf("mod check 96bit(%d): %u,%u,%u | %u,%u,%u | %u | %u, %u|\n\n",
+            i,
+            n.d2, n.d1, n.d0,
+            q.d2, q.d1, q.d0,
+            qi,
+            res_top, res);
+  //#endif
+      PROOF_K[4 * i + 1] = n.d2;
+      PROOF_K[4 * i + 2] = n.d1;
+      PROOF_K[4 * i + 3] = n.d0;
       //break;
     }
 #endif
