@@ -11,13 +11,13 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-__device__ static void check_factor96(int96 f, int96 a, unsigned int *RES)
+__device__ static void check_factor96(int96 f, int96 a, unsigned int *RES, unsigned int *SMALL_K)
 /* Check whether f is a factor or not. If f != 1 and a == 1 then f is a factor,
 in this case f is written into the RES array. */
 {
@@ -39,10 +39,28 @@ in this case f is written into the RES array. */
       }
     }
   }
+
+  if((a.d2|a.d1)==0) {
+    printf("96bit: %u,%u,%u | %u,%u,%u |\n\n",
+        f.d2, f.d1, f.d0,
+        a.d2, a.d1, a.d0);
+    int res = a.d0;
+    for (int i = 1; i <= 32; i++, res >>= 1) {
+      if (res <= 1) {
+        int found;
+        found = atomicInc(&SMALL_K[4 * i], 10000);
+        if (found == 0) {
+          SMALL_K[4 * i + 1] = f.d2;
+          SMALL_K[4 * i + 2] = f.d1;
+          SMALL_K[4 * i + 3] = f.d0;
+        }
+      }
+    }
+  }
 }
 
 
-__device__ static void check_big_factor96(int96 f, int96 a, unsigned int *RES)
+__device__ static void check_big_factor96(int96 f, int96 a, unsigned int *RES, unsigned int *SMALL_K)
 /* Similar to check_factor96() but without checking f != 1. This is a little
 bit faster but only safe for kernel which have a lower limit well above 1. The
 barrett based kernels have a lower limit of 2^64 so this function is used
@@ -61,6 +79,24 @@ there. */
       RES[index * 3 + 1] = f.d2;
       RES[index * 3 + 2] = f.d1;
       RES[index * 3 + 3] = f.d0;
+    }
+  }
+
+  if((a.d2|a.d1)==0) {
+    printf("big 96bit: %u,%u,%u | %u,%u,%u |\n\n",
+        f.d2, f.d1, f.d0,
+        a.d2, a.d1, a.d0);
+    int res = a.d0;
+    for (int i = 1; i <= 32; i++, res >>= 1) {
+      if (res <= 1) {
+        int found;
+        found = atomicInc(&SMALL_K[4 * i], 10000);
+        if (found == 0) {
+          SMALL_K[4 * i + 1] = f.d2;
+          SMALL_K[4 * i + 2] = f.d1;
+          SMALL_K[4 * i + 3] = f.d0;
+        }
+      }
     }
   }
 }
@@ -87,7 +123,7 @@ __device__ static void create_FC96(int96 *f, unsigned int exp, int96 k, unsigned
   if(exp96.d1) /* exp96.d1 is 0 or 1 */
   {
     f->d1 = __add_cc(f->d1, k.d0);
-    f->d2 = __addc  (f->d2, k.d1);  
+    f->d2 = __addc  (f->d2, k.d1);
   }							// f = 2 * k * exp + 1
 }
 
@@ -106,7 +142,7 @@ is faster for _SOME_ kernels. */
 
   k.d0 = __umad32_cc(k_offset, NUM_CLASSES, k.d0);
   k.d1 = __umad32hic(k_offset, NUM_CLASSES, k.d1);
-        
+
   /* umad32 is slower here?! */
   f->d0 = 1 +                                  __umul32(k.d0, exp96.d0);
   f->d1 = __add_cc(__umul32hi(k.d0, exp96.d0), __umul32(k.d1, exp96.d0));
@@ -115,7 +151,7 @@ is faster for _SOME_ kernels. */
   if(exp96.d1) /* exp96.d1 is 0 or 1 */
   {
     f->d1 = __add_cc(f->d1, k.d0);
-    f->d2 = __addc  (f->d2, k.d1);  
+    f->d2 = __addc  (f->d2, k.d1);
   }							// f = 2 * k * exp + 1
 #endif
 }
@@ -197,7 +233,7 @@ are "out of range".
 }
 
 
-__device__ static void mod_simple_96_and_check_big_factor96(int96 q, int96 n, float nf, unsigned int *RES)
+__device__ static void mod_simple_96_and_check_big_factor96(int96 q, int96 n, float nf, unsigned int *RES, unsigned int *SMALL_K)
 /*
 This function is a combination of mod_simple_96(), check_big_factor96() and an additional correction step.
 If q mod n == 1 then n is a factor and written into the RES array.
@@ -205,16 +241,14 @@ q must be less than 100n!
 */
 {
   float qf;
-  unsigned int qi, res;
+  unsigned int qi, res, res_top;
   int96 nn;
-
   qf = __uint2float_rn(q.d2);
   qf = qf * 4294967296.0f + __uint2float_rn(q.d1);
+  qi = __float2uint_rz(qf*nf);
 
-  qi=__float2uint_rz(qf*nf);
-  
 #ifdef WAGSTAFF
-  qi++; /* cause in underflow in subtraction so we can check for (-1) instead of (q - 1) */
+  qi++; /* cause an underflow in subtraction so we can check for (-1) instead of (q - 1) */
 #endif
 /* at this point the quotient still is sometimes to small (the error is 1 in this case)
 --> final res odd and qi correct: n might be a factor
@@ -224,7 +258,7 @@ q must be less than 100n!
 so we compare the LSB of qi and q.d0, if they are the same (both even or both odd) the res (without correction) would be even. In this case increment qi by one.*/
 
   qi += ((~qi) ^ q.d0) & 1;
- 
+
   nn.d0 = __umul32(n.d0, qi);
 
 #ifdef WAGSTAFF
@@ -245,7 +279,7 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
     res  = __sub_cc (q.d0, nn.d0);
     res &= __subc_cc(q.d1, nn.d1);
     res &= __subc   (q.d2, nn.d2);
-    
+
     if(res == 0xFFFFFFFF)
 #else /* Mersennes */
     nn.d0++;
@@ -266,5 +300,23 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
         RES[index * 3 + 3] = n.d0;
       }
     }
+
+#ifndef WAGSTAFF
+    // Possible one two high because of carry below.
+    res_top = __subc   (q.d2, nn.d2);
+
+    int i = atomicInc(&SMALL_K[0], 10000);
+    if (i <= 20) {
+      printf("mod check 96bit: %u,%u,%u | %u,%u,%u | %u | %u, %u|\n\n",
+          n.d2, n.d1, n.d0,
+          q.d2, q.d1, q.d0,
+          qi,
+          res_top, res);
+      SMALL_K[4 * i + 1] = n.d2;
+      SMALL_K[4 * i + 2] = n.d1;
+      SMALL_K[4 * i + 3] = n.d0;
+      //break;
+    }
+#endif
   }
 }

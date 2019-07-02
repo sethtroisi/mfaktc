@@ -434,6 +434,32 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
   if(mystuff->mode == MODE_NORMAL)fclose(resultfile);
 }
 
+void print_small_k(mystuff_t *mystuff, char *small_k, int bits)
+{
+  char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
+  FILE *resultfile = NULL;
+
+  if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
+    sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
+  else
+    UID[0]=0;
+
+  if(mystuff->mode != MODE_SELFTEST_SHORT)
+  {
+    printf("%s%u small_k(%s): %d\n", NAME_NUMBERS, mystuff->exponent, small_k, bits);
+  }
+
+  if(mystuff->mode == MODE_NORMAL)
+  {
+    resultfile = fopen(mystuff->resultfile, "a");
+    fprintf(resultfile, "%s%s%u small_k(%s): %d [TF:%d:%d:mfaktc %s %s]\n",
+        UID, NAME_NUMBERS, mystuff->exponent,
+        small_k, bits,
+        mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
+    fclose(resultfile);
+  }
+}
+
 
 double primenet_ghzdays(unsigned int exp, int bit_min, int bit_max)
 /* estimate the GHZ-days for the current job

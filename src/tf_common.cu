@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -58,38 +58,38 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
   timeval timer;
   timeval timer2;
   unsigned long long int twait = 0;
-#ifdef TF_72BIT  
-  int72 factor,k_base;
+#ifdef TF_72BIT
+  int72 factor,k_base,small_k;
   int144 b_preinit;
 #endif
 #if defined(TF_96BIT) || defined(TF_BARRETT)
-  int96 factor,k_base;
+  int96 factor,k_base,small_k;
   int192 b_preinit;
 #endif
   int shiftcount, ln2b, count = 0;
   unsigned long long int k_diff;
   char string[50];
   int factorsfound = 0;
-  
+
   int h_ktab_index = 0;
   int h_ktab_cpu[CPU_STREAMS_MAX];			// the set of h_ktab[N]s currently ownt by CPU
 							// 0 <= N < h_ktab_index: these h_ktab[]s are preprocessed
                                                         // h_ktab_index <= N < mystuff.cpu_streams: these h_ktab[]s are NOT preprocessed
   int h_ktab_inuse[NUM_STREAMS_MAX];			// h_ktab_inuse[N] contains the number of h_ktab[] currently used by stream N
   unsigned long long int k_min_grid[CPU_STREAMS_MAX];	// k_min_grid[N] contains the k_min for h_ktab[h_ktab_cpu[N]], only valid for preprocessed h_ktab[]s
-  
+
   timer_init(&timer);
 
   int threadsPerBlock = THREADS_PER_BLOCK;
   int blocksPerGrid = (mystuff->threads_per_grid + threadsPerBlock - 1) / threadsPerBlock;
-  
+
   unsigned int delay = 1000;
-  
+
   for(i=0; i<mystuff->num_streams; i++)h_ktab_inuse[i] = i;
   for(i=0; i<mystuff->cpu_streams; i++)h_ktab_cpu[i] = i + mystuff->num_streams;
   for(i=0; i<mystuff->cpu_streams; i++)k_min_grid[i] = 0;
   h_ktab_index = 0;
-  
+
   shiftcount=0;
   while((1ULL<<shiftcount) < (unsigned long long int)mystuff->exponent)shiftcount++;
 //  printf("\n\nshiftcount = %d\n",shiftcount);
@@ -103,7 +103,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 //  printf("shiftcount = %d\n",shiftcount);
 //  printf("ln2b = %d\n",ln2b);
   b_preinit.d5=0;b_preinit.d4=0;b_preinit.d3=0;b_preinit.d2=0;b_preinit.d1=0;b_preinit.d0=0;
-#ifdef TF_72BIT  
+#ifdef TF_72BIT
   if     (ln2b<24 )b_preinit.d0=1<< ln2b;
   else if(ln2b<48 )b_preinit.d1=1<<(ln2b-24);
   else if(ln2b<72 )b_preinit.d2=1<<(ln2b-48);
@@ -118,15 +118,17 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
   else if(ln2b<128)b_preinit.d3=1<<(ln2b-96);
   else if(ln2b<160)b_preinit.d4=1<<(ln2b-128);
   else             b_preinit.d5=1<<(ln2b-160);	// b_preinit = 2^ln2b
-#endif  
+#endif
 
 
-/* set result array to 0 */  
+/* set result array to 0 */
   cudaMemsetAsync(mystuff->d_RES, 0, 1*sizeof(int)); //first int of result array contains the number of factors found
+  cudaMemsetAsync(mystuff->d_SMALL_K, 0, 128*sizeof(int));
+
 //  for(i=0;i<32;i++)mystuff->h_RES[i]=0;
 //  cudaMemcpy(mystuff->d_RES, mystuff->h_RES, 32*sizeof(int), cudaMemcpyHostToDevice);
 
-#ifdef DEBUG_GPU_MATH  
+#ifdef DEBUG_GPU_MATH
 //  cudaMemcpy(mystuff->d_modbasecase_debug, mystuff->h_RES, 32*sizeof(int), cudaMemcpyHostToDevice);
   cudaMemset(mystuff->d_modbasecase_debug, 0, 32*sizeof(int));
 #endif
@@ -147,23 +149,23 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 #ifdef DEBUG_STREAM_SCHEDULE
       printf(" STREAM_SCHEDULE: preprocessing on h_ktab[%d] (count = %d)\n", index, count);
 #endif
-    
+
       sieve_candidates(mystuff->threads_per_grid, mystuff->h_ktab[index], mystuff->sieve_primes);
       k_diff=mystuff->h_ktab[index][mystuff->threads_per_grid-1]+1;
       k_diff*=NUM_CLASSES;				/* NUM_CLASSES because classes are mod NUM_CLASSES */
-      
+
       k_min_grid[h_ktab_index] = k_min;
       h_ktab_index++;
-      
+
       count++;
       k_min += (unsigned long long int)k_diff;
       timer_init(&timer2);
     }
     else if(mystuff->allowsleep == 1)
     {
-      /* no unused h_ktab for preprocessing. 
+      /* no unused h_ktab for preprocessing.
       This usually means that
-      a) all GPU streams are busy 
+      a) all GPU streams are busy
       and
       b) we've preprocessed all available CPU streams
       so let's sleep for some time instead of running a busy loop on cudaStreamQuery() */
@@ -190,7 +192,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 
         cudaMemcpyAsync(mystuff->d_ktab[stream], mystuff->h_ktab[h_ktab_inuse[stream]], size, cudaMemcpyHostToDevice, mystuff->stream[stream]);
 
-#ifdef TF_72BIT    
+#ifdef TF_72BIT
         k_base.d0 =  k_min_grid[h_ktab_index] & 0xFFFFFF;
         k_base.d1 = (k_min_grid[h_ktab_index] >> 24) & 0xFFFFFF;
         k_base.d2 =  k_min_grid[h_ktab_index] >> 48;
@@ -198,9 +200,10 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
         k_base.d0 =  k_min_grid[h_ktab_index] & 0xFFFFFFFF;
         k_base.d1 =  k_min_grid[h_ktab_index] >> 32;
         k_base.d2 = 0;
-#endif    
+#endif
 
-        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES
+        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit,
+                                                                                    mystuff->d_RES, mystuff->d_SMALL_K
 #if defined (TF_BARRETT) && (defined(TF_BARRETT_87BIT) || defined(TF_BARRETT_88BIT) || defined(TF_BARRETT_92BIT) || defined(DEBUG_GPU_MATH))
                                                                                     , mystuff->bit_min-63
 #endif
@@ -244,11 +247,12 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 
 /* download results from GPU */
   cudaMemcpy(mystuff->h_RES, mystuff->d_RES, 32*sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy(mystuff->h_SMALL_K, mystuff->d_SMALL_K, 128*sizeof(int), cudaMemcpyDeviceToHost);
 
 #ifdef DEBUG_GPU_MATH
   cudaMemcpy(mystuff->h_modbasecase_debug, mystuff->d_modbasecase_debug, 32*sizeof(int), cudaMemcpyDeviceToHost);
   for(i=0;i<32;i++)if(mystuff->h_modbasecase_debug[i] != 0)printf("h_modbasecase_debug[%2d] = %u\n", i, mystuff->h_modbasecase_debug[i]);
-#endif  
+#endif
 
   mystuff->stats.grid_count = count;
   mystuff->stats.class_time = timer_diff(&timer)/1000;
@@ -260,7 +264,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
   else                                mystuff->stats.cpu_wait = -1.0f;
 
   print_status_line(mystuff);
-  
+
   if(mystuff->stats.cpu_wait >= 0.0f)
   {
 /* if SievePrimesAdjust is enable lets try to get 2 % < CPU wait < 6% */
@@ -277,7 +281,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
       if(mystuff->sieve_primes < mystuff->sieve_primes_min) mystuff->sieve_primes = mystuff->sieve_primes_min;
     }
   }
-  
+
 
   factorsfound=mystuff->h_RES[0];
   for(i=0; (i<factorsfound) && (i<10); i++)
@@ -285,9 +289,9 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
     factor.d2=mystuff->h_RES[i*3 + 1];
     factor.d1=mystuff->h_RES[i*3 + 2];
     factor.d0=mystuff->h_RES[i*3 + 3];
-#ifdef TF_72BIT    
+#ifdef TF_72BIT
     print_dez72(factor,string);
-#endif    
+#endif
 #if defined(TF_96BIT) || defined(TF_BARRETT)
     print_dez96(factor,string);
 #endif
@@ -296,6 +300,24 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
   if(factorsfound>=10)
   {
     print_factor(mystuff, factorsfound, NULL);
+  }
+
+  if(factorsfound == 0) {
+    for(int i = 1; i <= 32; i++) {
+      int found_small_i = mystuff->h_SMALL_K[4 * i];
+      if(found_small_i) {
+        small_k.d2=mystuff->h_SMALL_K[4 * i + 1];
+        small_k.d1=mystuff->h_SMALL_K[4 * i + 2];
+        small_k.d0=mystuff->h_SMALL_K[4 * i + 3];
+    #ifdef TF_72BIT
+        print_dez72(small_k,string);
+    #endif
+    #if defined(TF_96BIT) || defined(TF_BARRETT)
+        print_dez96(small_k,string);
+    #endif
+        print_small_k(mystuff, string, i);
+      }
+    }
   }
 
   return factorsfound;

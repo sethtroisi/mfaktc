@@ -18,7 +18,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <cuda.h>
-#include <cuda_runtime.h>  
+#include <cuda_runtime.h>
 
 #include "params.h"
 #include "my_types.h"
@@ -54,9 +54,9 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K, int bit_max64)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -86,7 +86,7 @@ bit_max64 is the number of bits in the factor (minus 64)
     f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
     f.d2 = __addc   (f_base.d2, 0);
 
-    test_FC96_barrett92(f, b_preinit, initial_shifter_value, RES, bit_max64
+    test_FC96_barrett92(f, b_preinit, initial_shifter_value, RES, SMALL_K, bit_max64
 #ifdef DEBUG_GPU_MATH
                         , modbasecase_debug
 #endif
@@ -97,9 +97,9 @@ bit_max64 is the number of bits in the factor (minus 64)
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K, int bit_max64)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -129,7 +129,7 @@ bit_max64 is the number of bits in the factor (minus 64)
     f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
     f.d2 = __addc   (f_base.d2, 0);
 
-    test_FC96_barrett88(f, b_preinit, initial_shifter_value, RES, bit_max64
+    test_FC96_barrett88(f, b_preinit, initial_shifter_value, RES, SMALL_K, bit_max64
 #ifdef DEBUG_GPU_MATH
                         , modbasecase_debug
 #endif
@@ -140,9 +140,9 @@ bit_max64 is the number of bits in the factor (minus 64)
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K, int bit_max64)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -172,7 +172,7 @@ bit_max64 is the number of bits in the factor (minus 64)
     f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
     f.d2 = __addc   (f_base.d2, 0);
 
-    test_FC96_barrett87(f, b_preinit, initial_shifter_value, RES, bit_max64
+    test_FC96_barrett87(f, b_preinit, initial_shifter_value, RES, SMALL_K, bit_max64
 #ifdef DEBUG_GPU_MATH
                         , modbasecase_debug
 #endif
@@ -183,9 +183,9 @@ bit_max64 is the number of bits in the factor (minus 64)
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -214,7 +214,7 @@ a is precomputed on host ONCE.
     f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
     f.d2 = __addc   (f_base.d2, 0);
 
-    test_FC96_barrett79(f, b_preinit, initial_shifter_value, RES
+    test_FC96_barrett79(f, b_preinit, initial_shifter_value, RES, SMALL_K
 #ifdef DEBUG_GPU_MATH
                         , bit_max64, modbasecase_debug
 #endif
@@ -225,9 +225,9 @@ a is precomputed on host ONCE.
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -256,7 +256,7 @@ a is precomputed on host ONCE.
     f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
     f.d2 = __addc   (f_base.d2, 0);
 
-    test_FC96_barrett77(f, b_preinit, initial_shifter_value, RES
+    test_FC96_barrett77(f, b_preinit, initial_shifter_value, RES, SMALL_K
 #ifdef DEBUG_GPU_MATH
                         , bit_max64, modbasecase_debug
 #endif
@@ -267,9 +267,9 @@ a is precomputed on host ONCE.
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, unsigned int *SMALL_K, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -298,7 +298,7 @@ a is precomputed on host ONCE.
     f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
     f.d2 = __addc   (f_base.d2, 0);
 
-    test_FC96_barrett76(f, b_preinit, initial_shifter_value, RES
+    test_FC96_barrett76(f, b_preinit, initial_shifter_value, RES, SMALL_K
 #ifdef DEBUG_GPU_MATH
                         , bit_max64, modbasecase_debug
 #endif

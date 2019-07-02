@@ -56,7 +56,7 @@ Mersenne numbers */
 
 /* enable for printf's from device (GPU) code. Only used in sm_20 or newer
 code path */
-//#define USE_DEVICE_PRINTF
+#define USE_DEVICE_PRINTF
 
 
 /* do some checks on math done on GPU (mainly division stuff) */

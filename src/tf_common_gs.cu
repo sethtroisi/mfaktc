@@ -54,7 +54,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 {
   int i;
   timeval timer;
-  int96 factor,k_base;
+  int96 factor,k_base,small_k;
   int192 b_preinit;
   int shiftcount, ln2b, count = 0;
   int numblocks;
@@ -94,10 +94,11 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
   else if(ln2b<160)b_preinit.d4=1<<(ln2b-128);
   else             b_preinit.d5=1<<(ln2b-160);	// b_preinit = 2^ln2b
 
-/* set result array to 0 */  
+/* set result array to 0 */
   cudaMemset(mystuff->d_RES, 0, 1*sizeof(int)); //first int of result array contains the number of factors found
+  cudaMemset(mystuff->d_SMALL_K, 0, 128*sizeof(int));
 
-#ifdef DEBUG_GPU_MATH  
+#ifdef DEBUG_GPU_MATH
   cudaMemset(mystuff->d_modbasecase_debug, 0, 32*sizeof(int));
 #endif
 
@@ -116,7 +117,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
   else shared_mem_required = 22;					// 67894 primes expect 19.94%
 #endif
   shared_mem_required = mystuff->gpu_sieve_processing_size * sizeof (int) * shared_mem_required / 100;
-  
+
   // FIXME: can't use all the shared memory for GPU sieve, lets keep 1kiB spare...
   if(mystuff->verbosity >= 3)printf("shared_mem_required = %d bytes\n", shared_mem_required + 1024);
 
@@ -128,7 +129,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
     printf("       the amount of shared memory needed\n");
     exit(1);
   }
-     
+
 
   // Loop until all the k's are processed
   for(;;)
@@ -156,7 +157,8 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 
     // Now let the GPU trial factor the candidates that survived the sieving
 
-    MFAKTC_FUNC<<<numblocks, THREADS_PER_BLOCK, shared_mem_required>>>(mystuff->exponent, k_base, mystuff->d_bitarray, mystuff->gpu_sieve_processing_size, shiftcount, b_preinit, mystuff->d_RES
+    MFAKTC_FUNC<<<numblocks, THREADS_PER_BLOCK, shared_mem_required>>>(mystuff->exponent, k_base, mystuff->d_bitarray, mystuff->gpu_sieve_processing_size, shiftcount, b_preinit,
+                                                                       mystuff->d_RES, mystuff->d_SMALL_K
 #if defined (TF_BARRETT) && (defined(TF_BARRETT_87BIT_GS) || defined(TF_BARRETT_88BIT_GS) || defined(TF_BARRETT_92BIT_GS) || defined(DEBUG_GPU_MATH))
                                                                        , mystuff->bit_min-63
 #endif
@@ -183,11 +185,12 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 
 /* download results from GPU */
   cudaMemcpy(mystuff->h_RES, mystuff->d_RES, 32*sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy(mystuff->h_SMALL_K, mystuff->d_SMALL_K, 128*sizeof(int), cudaMemcpyDeviceToHost);
 
 #ifdef DEBUG_GPU_MATH
   cudaMemcpy(mystuff->h_modbasecase_debug, mystuff->d_modbasecase_debug, 32*sizeof(int), cudaMemcpyDeviceToHost);
   for(i=0;i<32;i++)if(mystuff->h_modbasecase_debug[i] != 0)printf("h_modbasecase_debug[%2d] = %u\n", i, mystuff->h_modbasecase_debug[i]);
-#endif  
+#endif
 
   // Set grid count to the number of blocks processed.  The print code will convert this to a
   // count of candidates processed (by multiplying by 8192 * THREADS_PER_BLOCK.
@@ -208,6 +211,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
   print_status_line(mystuff);
 
   // Print out any found factors
+  // TODO(sethtroisi): Unify with tf_common.cu in output.c
   factorsfound=mystuff->h_RES[0];
   for(i=0; (i<factorsfound) && (i<10); i++)
   {
@@ -220,6 +224,26 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
   if(factorsfound>=10)
   {
     print_factor(mystuff, factorsfound, NULL);
+  }
+
+  if(factorsfound == 0) {
+    for(int i = 1; i <= 32; i++) {
+      int found_small_i = mystuff->h_SMALL_K[4 * i];
+      if(found_small_i) {
+        printf("small_k(%d): %d\n", i, found_small_i);
+        small_k.d2=mystuff->h_SMALL_K[4 * i + 1];
+        small_k.d1=mystuff->h_SMALL_K[4 * i + 2];
+        small_k.d0=mystuff->h_SMALL_K[4 * i + 3];
+    #ifdef TF_72BIT
+        print_dez72(small_k,string);
+    #endif
+    #if defined(TF_96BIT) || defined(TF_BARRETT)
+        print_dez96(small_k,string);
+    #endif
+        print_small_k(mystuff, string, i);
+        break;
+      }
+    }
   }
 
   return factorsfound;
