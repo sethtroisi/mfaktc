@@ -94,10 +94,10 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
   else if(ln2b<160)b_preinit.d4=1<<(ln2b-128);
   else             b_preinit.d5=1<<(ln2b-160);	// b_preinit = 2^ln2b
 
-/* set result array to 0 */  
+/* set result array to 0 */
   cudaMemset(mystuff->d_RES, 0, 1*sizeof(int)); //first int of result array contains the number of factors found
 
-#ifdef DEBUG_GPU_MATH  
+#ifdef DEBUG_GPU_MATH
   cudaMemset(mystuff->d_modbasecase_debug, 0, 32*sizeof(int));
 #endif
 
@@ -116,7 +116,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
   else shared_mem_required = 22;					// 67894 primes expect 19.94%
 #endif
   shared_mem_required = mystuff->gpu_sieve_processing_size * sizeof (int) * shared_mem_required / 100;
-  
+
   // FIXME: can't use all the shared memory for GPU sieve, lets keep 1kiB spare...
   if(mystuff->verbosity >= 3)printf("shared_mem_required = %d bytes\n", shared_mem_required + 1024);
 
@@ -128,7 +128,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
     printf("       the amount of shared memory needed\n");
     exit(1);
   }
-     
+
 
   // Loop until all the k's are processed
   for(;;)
@@ -187,7 +187,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 #ifdef DEBUG_GPU_MATH
   cudaMemcpy(mystuff->h_modbasecase_debug, mystuff->d_modbasecase_debug, 32*sizeof(int), cudaMemcpyDeviceToHost);
   for(i=0;i<32;i++)if(mystuff->h_modbasecase_debug[i] != 0)printf("h_modbasecase_debug[%2d] = %u\n", i, mystuff->h_modbasecase_debug[i]);
-#endif  
+#endif
 
   // Set grid count to the number of blocks processed.  The print code will convert this to a
   // count of candidates processed (by multiplying by 8192 * THREADS_PER_BLOCK.

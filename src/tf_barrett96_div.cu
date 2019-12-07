@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -40,7 +40,7 @@ Input assumptions:
   - q = 2^(2*ceil(log2(n))) (~ twize the size of n, if 2^74 < n < 2^75 than q = 2^150)
   - 2^64 < n < 2^96
   -> 2^64 < res < 2^96
-  
+
 - div_160_96()
   - q = 2^160 (implicit, not a real parameter)
   - 2^64 < n < 2^80
@@ -53,7 +53,7 @@ Input assumptions:
 #ifdef DEBUG_GPU_MATH
   int96 tmp96;
 #endif
-  
+
 #ifdef INV_160_96
   int192 q;
 // set q to (nearly 2^160)
@@ -72,12 +72,12 @@ Input assumptions:
   qf*= 2097152.0f;
 #else
   qf = 9007199254740992.0f; // 2^(32 + (32 - 11))
-#endif  
+#endif
 
   qi=__float2uint_rz(qf*nf);
 
 // EDIT OW 2014-10-20: qi can't be > 2^21, otherwise result would be > 2^96... so check for 2^21 insteat of 2^22 here
-// this allows/avoid long shift after multiplication, we can do a simple shift before multiplication.  
+// this allows/avoid long shift after multiplication, we can do a simple shift before multiplication.
   MODBASECASE_QI_ERROR(1<<21, 1, qi, 0);
 
 #if __CUDA_ARCH__ >= KEPLER
@@ -85,7 +85,7 @@ Input assumptions:
 #else
   qi <<= 11;
 #endif
-  
+
   res->d2 = qi;
 
 // nn = n * qi
@@ -148,7 +148,7 @@ Input assumptions:
 // shiftleft nn 23 bits
 #ifdef DEBUG_GPU_MATH
   nn.d5 =                  nn.d4 >> 9;
-#endif  
+#endif
 #if __CUDA_ARCH__ >= KEPLER
   nn.d4 = __umad32(nn.d4, 8388608, (nn.d3 >> 9));
   nn.d3 = __umad32(nn.d3, 8388608, (nn.d2 >> 9));
@@ -165,7 +165,7 @@ Input assumptions:
   q.d1 = __sub_cc (q.d1, nn.d1);
   q.d2 = __subc_cc(q.d2, nn.d2);
   q.d3 = __subc_cc(q.d3, nn.d3);
-#ifndef DEBUG_GPU_MATH  
+#ifndef DEBUG_GPU_MATH
   q.d4 = __subc   (q.d4, nn.d4);
 #else
   q.d4 = __subc_cc(q.d4, nn.d4);
@@ -217,7 +217,7 @@ Input assumptions:
   qf= qf * 4294967296.0f + __uint2float_rn(q.d3);
   qf= qf * 4294967296.0f + __uint2float_rn(q.d2);
   qf*= 131072.0f;
-  
+
   qi=__float2uint_rz(qf*nf);
 
   MODBASECASE_QI_ERROR(1<<22, 4, qi, 5);
@@ -229,7 +229,7 @@ Input assumptions:
 #endif
   res->d1 = __add_cc(res->d1, qi >> 17);
   res->d2 = __addc  (res->d2, 0);
-  
+
 // nn = n * qi
   nn.d0 =                                 __umul32(n.d0, qi);
   nn.d1 = __add_cc (__umul32hi(n.d0, qi), __umul32(n.d1, qi));
@@ -270,7 +270,7 @@ Input assumptions:
   qf= __uint2float_rn(q.d3);
   qf= qf * 4294967296.0f + __uint2float_rn(q.d2);
   qf= qf * 4294967296.0f + __uint2float_rn(q.d1);
-  
+
   qi=__float2uint_rz(qf*nf);
 
   MODBASECASE_QI_ERROR(1<<20, 5, qi, 8);
@@ -278,7 +278,7 @@ Input assumptions:
   res->d0 = __add_cc (res->d0, qi);
   res->d1 = __addc_cc(res->d1,  0);
   res->d2 = __addc   (res->d2,  0);
-  
+
 #ifdef DEBUG_GPU_MATH
 /* compute to the end only in DEBUG_GPU_MATH mode */
 
@@ -299,7 +299,7 @@ Input assumptions:
   tmp96.d2=q.d2;
 
   if(n.d2) /* only care about errors is n >= 2^64 (see function description) */
-  {  
+  {
     MODBASECASE_NONZERO_ERROR(q.d5, 6, 5, 9);
     MODBASECASE_NONZERO_ERROR(q.d4, 6, 4, 10);
     MODBASECASE_NONZERO_ERROR(q.d3, 6, 3, 11);

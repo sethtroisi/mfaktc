@@ -11,14 +11,14 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
 #include <cuda.h>
-#include <cuda_runtime.h>  
+#include <cuda_runtime.h>
 
 #include "params.h"
 #include "my_types.h"
@@ -84,12 +84,12 @@ division will be skipped
   q.d5 = __subc   (q.d5, nn.d5);
 #endif // SHORTCUT_75BIT
 /********** Step 2, Offset 2^55 (1*32 + 23) **********/
-#ifndef SHORTCUT_75BIT  
+#ifndef SHORTCUT_75BIT
   qf= __uint2float_rn(q.d5);
   qf= qf * 4294967296.0f + __uint2float_rn(q.d4);
 #else
   qf= __uint2float_rn(q.d4);
-#endif  
+#endif
   qf= qf * 4294967296.0f + __uint2float_rn(q.d3);
   qf= qf * 4294967296.0f + __uint2float_rn(q.d2);
   qf*= 512.0f;
@@ -108,7 +108,7 @@ division will be skipped
 // shiftleft nn 23 bits
 #ifdef DEBUG_GPU_MATH
   nn.d5 =                  nn.d4 >> 9;
-#endif  
+#endif
   nn.d4 = (nn.d4 << 23) + (nn.d3 >> 9);
   nn.d3 = (nn.d3 << 23) + (nn.d2 >> 9);
   nn.d2 = (nn.d2 << 23) + (nn.d1 >> 9);
@@ -118,7 +118,7 @@ division will be skipped
   q.d1 = __sub_cc (q.d1, nn.d1);
   q.d2 = __subc_cc(q.d2, nn.d2);
   q.d3 = __subc_cc(q.d3, nn.d3);
-#ifndef DEBUG_GPU_MATH  
+#ifndef DEBUG_GPU_MATH
   q.d4 = __subc   (q.d4, nn.d4);
 #else
   q.d4 = __subc_cc(q.d4, nn.d4);
@@ -161,7 +161,7 @@ division will be skipped
   qf= qf * 4294967296.0f + __uint2float_rn(q.d2);
   qf= qf * 4294967296.0f + __uint2float_rn(q.d1);
   qf*= 131072.0f;
-  
+
   qi=__float2uint_rz(qf*nf);
 
   MODBASECASE_QI_ERROR(1<<22, 4, qi, 5);
@@ -200,7 +200,7 @@ division will be skipped
   qf= qf * 4294967296.0f + __uint2float_rn(q.d2);
   qf= qf * 4294967296.0f + __uint2float_rn(q.d1);
   qf= qf * 4294967296.0f + __uint2float_rn(q.d0);
-  
+
   qi=__float2uint_rz(qf*nf);
 
   MODBASECASE_QI_ERROR(1<<20, 5, qi, 8);
@@ -208,12 +208,12 @@ division will be skipped
 // nn = n * qi
   nn.d0 =                                 __umul32(n.d0, qi);
   nn.d1 = __add_cc (__umul32hi(n.d0, qi), __umul32(n.d1, qi));
-#ifndef DEBUG_GPU_MATH  
+#ifndef DEBUG_GPU_MATH
   nn.d2 = __addc   (__umul32hi(n.d1, qi), __umul32(n.d2, qi));
 #else
   nn.d2 = __addc_cc(__umul32hi(n.d1, qi), __umul32(n.d2, qi));
   nn.d3 = __addc   (__umul32hi(n.d2, qi),                  0);
-#endif  
+#endif
 
 //  q = q - nn
   q.d0 = __sub_cc (q.d0, nn.d0);
@@ -228,7 +228,7 @@ division will be skipped
   res->d0=q.d0;
   res->d1=q.d1;
   res->d2=q.d2;
-  
+
   MODBASECASE_NONZERO_ERROR(q.d5, 6, 5, 9);
   MODBASECASE_NONZERO_ERROR(q.d4, 6, 4, 10);
   MODBASECASE_NONZERO_ERROR(q.d3, 6, 3, 11);
@@ -262,7 +262,7 @@ Precalculated here since it is the same for all steps in the following loop */
   ff= ff * 4294967296.0f + __uint2float_rn(f.d0);
 
   ff=__int_as_float(0x3f7ffffb) / ff;	// just a little bit below 1.0f so we allways underestimate the quotient
-        
+
 #ifndef DEBUG_GPU_MATH
   mod_192_96(&a,b,f,ff);			// a = b mod f
 #else
@@ -312,7 +312,7 @@ __launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95(unsigned int exp, int96 k, unsi
 #ifdef DEBUG_GPU_MATH
                                                  , unsigned int *modbasecase_debug
 #endif
-                                                 )                                                
+                                                 )
 /*
 computes 2^exp mod f
 shiftcount is used for precomputing without mod
@@ -322,7 +322,7 @@ a is precomputed on host ONCE. */
   int index = blockDim.x * blockIdx.x + threadIdx.x;
 
   create_FC96_mad(&f, exp, k, k_tab[index]);    // f = 2 * (k + k_tab[index]) * exp + 1
-  
+
   test_FC96_mfaktc_95(f, b, exp, RES, shiftcount
 #ifdef DEBUG_GPU_MATH
                       , modbasecase_debug
@@ -341,7 +341,7 @@ __launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95_gs(unsigned int exp, int96 k_ba
 #ifdef DEBUG_GPU_MATH
                                                  , unsigned int *modbasecase_debug
 #endif
-                                                 )                                                
+                                                 )
 /*
 computes 2^exp mod f
 shiftcount is used for precomputing without mod

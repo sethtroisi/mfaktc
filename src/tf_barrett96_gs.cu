@@ -18,7 +18,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <cuda.h>
-#include <cuda_runtime.h>  
+#include <cuda_runtime.h>
 
 #include "params.h"
 #include "my_types.h"

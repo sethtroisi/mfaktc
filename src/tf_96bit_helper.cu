@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -87,7 +87,7 @@ __device__ static void create_FC96(int96 *f, unsigned int exp, int96 k, unsigned
   if(exp96.d1) /* exp96.d1 is 0 or 1 */
   {
     f->d1 = __add_cc(f->d1, k.d0);
-    f->d2 = __addc  (f->d2, k.d1);  
+    f->d2 = __addc  (f->d2, k.d1);
   }							// f = 2 * k * exp + 1
 }
 
@@ -106,7 +106,7 @@ is faster for _SOME_ kernels. */
 
   k.d0 = __umad32_cc(k_offset, NUM_CLASSES, k.d0);
   k.d1 = __umad32hic(k_offset, NUM_CLASSES, k.d1);
-        
+
   /* umad32 is slower here?! */
   f->d0 = 1 +                                  __umul32(k.d0, exp96.d0);
   f->d1 = __add_cc(__umul32hi(k.d0, exp96.d0), __umul32(k.d1, exp96.d0));
@@ -115,7 +115,7 @@ is faster for _SOME_ kernels. */
   if(exp96.d1) /* exp96.d1 is 0 or 1 */
   {
     f->d1 = __add_cc(f->d1, k.d0);
-    f->d2 = __addc  (f->d2, k.d1);  
+    f->d2 = __addc  (f->d2, k.d1);
   }							// f = 2 * k * exp + 1
 #endif
 }
@@ -212,7 +212,7 @@ q must be less than 100n!
   qf = qf * 4294967296.0f + __uint2float_rn(q.d1);
 
   qi=__float2uint_rz(qf*nf);
-  
+
 #ifdef WAGSTAFF
   qi++; /* cause in underflow in subtraction so we can check for (-1) instead of (q - 1) */
 #endif
@@ -224,7 +224,7 @@ q must be less than 100n!
 so we compare the LSB of qi and q.d0, if they are the same (both even or both odd) the res (without correction) would be even. In this case increment qi by one.*/
 
   qi += ((~qi) ^ q.d0) & 1;
- 
+
   nn.d0 = __umul32(n.d0, qi);
 
 #ifdef WAGSTAFF
@@ -245,7 +245,7 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
     res  = __sub_cc (q.d0, nn.d0);
     res &= __subc_cc(q.d1, nn.d1);
     res &= __subc   (q.d2, nn.d2);
-    
+
     if(res == 0xFFFFFFFF)
 #else /* Mersennes */
     nn.d0++;

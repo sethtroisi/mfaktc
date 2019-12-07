@@ -151,7 +151,7 @@ __device__ static void test_FC96_barrett88(int96 f, int192 b, unsigned int shift
   int192 tmp192;
   int96 tmp96;
   float ff;
-  
+
 /*
 ff = f as float, needed in mod_192_96().
 Precalculated here since it is the same for all steps in the following loop */
@@ -299,7 +299,7 @@ Precalculated here since it is the same for all steps in the following loop */
     a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);	// a = b / (2 ^ (bits_in_f - 1)), a is at most 95.614 bits
     a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
     a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
-    
+
     mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
     a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
@@ -342,7 +342,7 @@ mod_simple_96_and_check_big_factor96() includes the final adjustment, too. The c
 produce an a that is too large by up to 11 times f. */
   mod_simple_96_and_check_big_factor96(a, f, ff, RES);
 }
-  
+
 
 __device__ static void test_FC96_barrett79(int96 f, int192 b, unsigned int shifter, unsigned int *RES
 #ifdef CPU_SIEVE
@@ -357,7 +357,7 @@ __device__ static void test_FC96_barrett79(int96 f, int192 b, unsigned int shift
   int192 tmp192;
   int96 tmp96;
   float ff;
-  
+
 /*
 ff = f as float, needed in mod_160_96().
 Precalculated here since it is the same for all steps in the following loop */
@@ -440,7 +440,7 @@ Precalculated here since it is the same for all steps in the following loop */
 //    shifter<<=1;
     shifter += shifter;
   }
-  
+
   a.d0 = tmp96.d0;
   a.d1 = tmp96.d1;
   a.d2 = tmp96.d2;
@@ -466,7 +466,7 @@ __device__ static void test_FC96_barrett77(int96 f, int192 b, unsigned int shift
   int192 tmp192;
   int96 tmp96;
   float ff;
-  
+
 /*
 ff = f as float, needed in mod_160_96().
 Precalculated here since it is the same for all steps in the following loop */
@@ -556,7 +556,7 @@ Precalculated here since it is the same for all steps in the following loop */
 //    shifter<<=1;
     shifter += shifter;
   }
-  
+
 /*#ifndef DEBUG_GPU_MATH
   mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above may produce an a that is too large by up to 5 times f.
 #else

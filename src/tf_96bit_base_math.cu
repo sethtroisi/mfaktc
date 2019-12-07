@@ -12,7 +12,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -47,7 +47,7 @@ __device__ static void shl_192(int192 *a)
   a->d2 = __addc_cc(a->d2, a->d2);
   a->d3 = __addc_cc(a->d3, a->d3);
   a->d4 = __addc_cc(a->d4, a->d4);
-#ifndef SHORTCUT_75BIT  
+#ifndef SHORTCUT_75BIT
   a->d5 = __addc   (a->d5, a->d5);
 #endif
 }
@@ -90,7 +90,7 @@ __device__ static void mul_96(int96 *res, int96 a, int96 b)
 
   res->d1 = __add_cc(__umul32hi(a.d0, b.d0), __umul32  (a.d1, b.d0));
   res->d2 = __addc  (__umul32  (a.d2, b.d0), __umul32hi(a.d1, b.d0));
-  
+
   res->d1 = __add_cc(res->d1,                __umul32  (a.d0, b.d1));
   res->d2 = __addc  (res->d2,                __umul32hi(a.d0, b.d1));
 
@@ -108,16 +108,16 @@ __device__ static void mul_96(int96 *res, int96 a, int96 b)
   res->d1 = __umul32hi(a.d0, b.d0);
   res->d2 = __umul32  (a.d2, b.d0);
   res->d3 = __umul32hi(a.d2, b.d0);
-  
+
   res->d1 = __add_cc (res->d1, __umul32  (a.d1, b.d0));
   res->d2 = __addc_cc(res->d2, __umul32hi(a.d1, b.d0));
   res->d3 = __addc_cc(res->d3, __umul32  (a.d2, b.d1));
   res->d4 = __addc   (      0,                      0);
-  
+
   res->d1 = __add_cc (res->d1, __umul32  (a.d0, b.d1));
   res->d2 = __addc_cc(res->d2, __umul32hi(a.d0, b.d1));
   res->d3 = __addc_cc(res->d3, __umul32  (a.d1, b.d2));
-  res->d4 = __addc_cc(res->d4, __umul32hi(a.d1, b.d2));  
+  res->d4 = __addc_cc(res->d4, __umul32hi(a.d1, b.d2));
   res->d5 = __addc   (      0,                      0);
 
   res->d2 = __add_cc (res->d2, __umul32  (a.d0, b.d2));
@@ -171,14 +171,14 @@ of mul_96_192().
 #else
   res->d2 = __umul32  (a.d2, b.d0);
   res->d3 = __umul32hi(a.d2, b.d0);
-  
+
   res->d2 = __add_cc (res->d2, __umul32hi(a.d1, b.d0));
   res->d3 = __addc_cc(res->d3, __umul32  (a.d2, b.d1));
   res->d4 = __addc   (      0,                      0);
-  
+
   res->d2 = __add_cc (res->d2, __umul32hi(a.d0, b.d1));
   res->d3 = __addc_cc(res->d3, __umul32  (a.d1, b.d2));
-  res->d4 = __addc_cc(res->d4, __umul32hi(a.d1, b.d2));  
+  res->d4 = __addc_cc(res->d4, __umul32hi(a.d1, b.d2));
   res->d5 = __addc   (      0,                      0);
 
   res->d2 = __add_cc (res->d2, __umul32  (a.d0, b.d2));
@@ -225,10 +225,10 @@ than of mul_96_192().
       : "r" (a.d0), "r" (a.d1), "r" (a.d2), "r" (b.d0), "r" (b.d1), "r" (b.d2));
 #else
   res->d3 = __umul32hi(a.d2, b.d0);
-  
+
   res->d3 = __add_cc (res->d3, __umul32  (a.d2, b.d1));
   res->d4 = __addc   (      0,                      0);
-  
+
   res->d3 = __add_cc (res->d3, __umul32  (a.d1, b.d2));
   res->d4 = __addc   (res->d4, __umul32hi(a.d1, b.d2)); // no carry propagation to d5 needed: 0xFFFF.FFFF * 0xFFFF.FFFF + 0xFFFF.FFFF      + 0xFFFF.FFFE      = 0xFFFF.FFFF.FFFF.FFFE
                                                         //                       res->d4|d3 = (a.d1 * b.d2).hi|lo       + (a.d2 * b.d1).lo + (a.d2 * b.d0).hi
@@ -284,10 +284,10 @@ than of mul_96_192().
 
   t1      = __umul32  (a.d2, b.d0);
   res->d3 = __umul32hi(a.d2, b.d0);
-  
+
   res->d3 = __add_cc (res->d3, __umul32  (a.d2, b.d1));
   res->d4 = __addc   (      0,                      0);
-  
+
   t1      = __add_cc (     t1, __umul32  (a.d1, b.d1));
   res->d3 = __addc_cc(res->d3, __umul32  (a.d1, b.d2));
   res->d4 = __addc   (res->d4, __umul32hi(a.d1, b.d2)); // no carry propagation to d5 needed: 0xFFFF.FFFF * 0xFFFF.FFFF + 0xFFFF.FFFF      + 0xFFFF.FFFE      + 1             = 0xFFFF.FFFF.FFFF.FFFF
@@ -315,7 +315,7 @@ assuming that a is < 2^95 (a.d2 < 2^31)! */
       "mul.lo.u32      %0, %6, %6;\n\t"       /* (a.d0 * a.d0).lo */
       "mul.lo.u32      %1, %6, %7;\n\t"       /* (a.d0 * a.d1).lo */
       "mul.hi.u32      %2, %6, %7;\n\t"       /* (a.d0 * a.d1).hi */
-      
+
       "add.cc.u32      %1, %1, %1;\n\t"       /* 2 * (a.d0 * a.d1).lo */
       "addc.cc.u32     %2, %2, %2;\n\t"       /* 2 * (a.d0 * a.d1).hi */
       "madc.hi.cc.u32  %3, %7, %7, 0;\n\t"    /* (a.d1 * a.d1).hi */
@@ -347,7 +347,7 @@ We'll use this knowledge later to avoid some two carry steps to %5 */
       "mul.lo.u32      %0, %6, %6;\n\t"       /* (a.d0 * a.d0).lo */
       "mul.lo.u32      %1, %6, %7;\n\t"       /* (a.d0 * a.d1).lo */
       "mul.hi.u32      %2, %6, %7;\n\t"       /* (a.d0 * a.d1).hi */
-      
+
       "add.cc.u32      %1, %1, %1;\n\t"       /* 2 * (a.d0 * a.d1).lo */
       "addc.cc.u32     %2, %2, %2;\n\t"       /* 2 * (a.d0 * a.d1).hi */
       "mul.hi.u32      t1, %7, %7;\n\t"       /* (a.d1 * a.d1).hi */
@@ -409,10 +409,10 @@ For correct results a must be less than 2^80 (a.d2 less than 2^16) */
       "madc.lo.cc.u32 %2, %6, %6, %2;\n\t" /* (a.d1 * a.d1).lo */
       "madc.hi.cc.u32 %3, %6, %6, %3;\n\t" /* (a.d1 * a.d1).hi */
       "madc.lo.u32    %4, %7, %7, 0;\n\t"  /* (a.d2 * a.d2).lo */
-      
+
       "mad.lo.cc.u32  %2, %5, a2, %2;\n\t" /* 2 * (a.d0 * a.d2).lo */
       "madc.lo.cc.u32 %3, %6, a2, %3;\n\t" /* 2 * (a.d1 * a.d2).lo */
-      "madc.hi.u32    %4, %6, a2, %4;\n\t" /* 2 * (a.d1 * a.d2).hi */                                          
+      "madc.hi.u32    %4, %6, a2, %4;\n\t" /* 2 * (a.d1 * a.d2).hi */
       "}"
       : "=r"(res->d0), "=r"(res->d1), "=r"(res->d2), "=r"(res->d3), "=r"(res->d4)
       : "r"(a.d0), "r"(a.d1), "r"(a.d2));
@@ -439,15 +439,15 @@ For correct results a must be less than 2^80 (a.d2 less than 2^16) */
       "addc.cc.u32    %3, %3, t1;\n\t"
       "mul.lo.u32     t1, %7, %7;\n\t"     /* (a.d2 * a.d2).lo */
       "addc.u32       %4, t1,  0;\n\t"
-      
+
       "mul.lo.u32     t1, %5, a2;\n\t"     /* 2 * (a.d0 * a.d2).lo */
       "add.cc.u32     %2, %2, t1;\n\t"
       "mul.lo.u32     t1, %6, a2;\n\t"     /* 2 * (a.d1 * a.d2).lo */
       "addc.cc.u32    %3, %3, t1;\n\t"
-      "mul.hi.u32     t1, %6, a2;\n\t"     /* 2 * (a.d1 * a.d2).hi */                                          
+      "mul.hi.u32     t1, %6, a2;\n\t"     /* 2 * (a.d1 * a.d2).hi */
       "addc.u32       %4, %4, t1;\n\t"
       "}"
       : "=r"(res->d0), "=r"(res->d1), "=r"(res->d2), "=r"(res->d3), "=r"(res->d4)
       : "r"(a.d0), "r"(a.d1), "r"(a.d2));
-#endif 
+#endif
 }

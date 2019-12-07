@@ -27,11 +27,11 @@ __device__ void shl_144(int144 *a)
 /* a = a << 1 */
 {
 	unsigned int tmp;
-	
+
 	a->d0 <<= 1;
 	tmp = a->d0 >> 24;
 	a->d0 &= 0xFFFFFF;
-	
+
 	a->d1 = (a->d1 << 1) + tmp;
 	tmp = a->d1 >> 24;
 	a->d1 &= 0xFFFFFF;
@@ -56,11 +56,11 @@ __device__ void shl_72(int72 *a)
 /* a = a << 1 */
 {
   unsigned int carry;
-  
+
   a->d0 <<= 1;
   carry = a->d0 >> 24;
   a->d0 &= 0xFFFFFF;
-  
+
   a->d1 = (a->d1 << 1) + carry;
   carry = a->d1 >> 24;
   a->d1 &= 0xFFFFFF;
@@ -79,7 +79,7 @@ __device__ static void mul_96(int96 *res, int96 a, int96 b)
 
   res->d1  = __add_cc(res->d1               , __umul32  (a.d1, b.d0));
   res->d2  = __addc  (res->d2               , __umul32  (a.d1, b.d1));
-  
+
   res->d2 += __umul32(a.d2, b.d0);
   res->d2 += __umul32(a.d0, b.d2);
 }
@@ -113,7 +113,7 @@ __device__ static void mad_96(int96 *res, int96 a, int96 b, int96 c)
 
   res->d1 = __add_cc (res->d1,                c.d1);
   res->d2 = __addc   (res->d2,                c.d2);
-  
+
   res->d1 = __add_cc (res->d1,                __umul32  (a.d0, b.d1));
   res->d2 = __addc   (res->d2,                __umul32hi(a.d0, b.d1));
 

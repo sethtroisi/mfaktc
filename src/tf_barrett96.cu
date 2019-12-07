@@ -18,7 +18,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <cuda.h>
-#include <cuda_runtime.h>  
+#include <cuda_runtime.h>
 
 #include "params.h"
 #include "my_types.h"
@@ -102,7 +102,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88(unsigne
   int index = blockDim.x * blockIdx.x + threadIdx.x;
 
   create_FC96(&f, exp, k, k_tab[index]);
-  
+
   test_FC96_barrett88(f, b, exp, RES, bit_max64, shiftcount
 #ifdef DEBUG_GPU_MATH
                       , modbasecase_debug
@@ -162,7 +162,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77(unsigne
   int index = blockDim.x * blockIdx.x + threadIdx.x;
 
   create_FC96_mad(&f, exp, k, k_tab[index]);
-  
+
   test_FC96_barrett77(f, b, exp, RES, shiftcount
 #ifdef DEBUG_GPU_MATH
                       , bit_max64, modbasecase_debug
@@ -182,7 +182,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76(unsigne
   int index = blockDim.x * blockIdx.x + threadIdx.x;
 
   create_FC96_mad(&f, exp, k, k_tab[index]);
-  
+
   test_FC96_barrett76(f, b, exp, RES, shiftcount
 #ifdef DEBUG_GPU_MATH
                       , bit_max64, modbasecase_debug
