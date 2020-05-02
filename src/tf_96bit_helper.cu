@@ -249,7 +249,7 @@ q must be less than 100n!
 */
 {
   float qf;
-  unsigned int qi, res, res_top;
+  unsigned int qi, res, res_top, res_mid, res_low;
   int96 nn;
   qf = __uint2float_rn(q.d2);
   qf = qf * 4294967296.0f + __uint2float_rn(q.d1);
@@ -290,11 +290,20 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
 
     if(res == 0xFFFFFFFF)
 #else /* Mersennes */
+    // [Seth]: isn't (q.d0 - nn.d0++) = 0 always?
+    // also why is the compiler comment present?
+
     nn.d0++;
-    res  = __sub_cc (q.d0, nn.d0);
-//           __sub_cc (q.d0, nn.d0); /* the compiler (release 5.0, V0.2.1221) doesn't want to execute this so we need the TWO lines above... */
-    res |= __subc_cc(q.d1, nn.d1);
-    res |= __subc   (q.d2, nn.d2);
+    res_low = __sub_cc (q.d0, nn.d0);
+    res_mid = __subc_cc(q.d1, nn.d1);
+    res_top = __subc   (q.d2, nn.d2);
+
+//    res  = __sub_cc (q.d0, nn.d0);
+////           __sub_cc (q.d0, nn.d0); /* the compiler (release 5.0, V0.2.1221) doesn't want to execute this so we need the TWO lines above... */
+//    res |= __subc_cc(q.d1, nn.d1);
+//    res |= __subc   (q.d2, nn.d2);
+
+    res = res_low | res_mid | res_top;
 
     if(res == 0)
 #endif
@@ -310,24 +319,37 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
     }
 
 #ifndef WAGSTAFF
-    // Possible one two high because of carry below.
-    res_top = __subc   (q.d2, nn.d2);
+    else {
+      //#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
+        // For debugging proof of work function
+        if (0) {
+          int i = atomicInc(&PROOF_K[33], 10000);
+          if (i <= 10) {
+              printf("mod check 96bit(%d): %u,%u,%u | %u,%u,%u | %u,%u,%u | %u | (%u,%u,%u), %u |\n\n",
+                  i,
+                  n.d2, n.d1, n.d0,
+                  nn.d2, nn.d1, nn.d0,
+                  q.d2, q.d1, q.d0,
+                  qi,
+                  res_top, res_mid, res_low, res);
+          }
+        }
+      //#endif
 
-    int i = atomicInc(&PROOF_K[0], 10000);
-    if (i <= 10) {
-  //#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
-      if (0)
-        printf("mod check 96bit(%d): %u,%u,%u | %u,%u,%u | %u | %u, %u|\n\n",
-            i,
-            n.d2, n.d1, n.d0,
-            q.d2, q.d1, q.d0,
-            qi,
-            res_top, res);
-  //#endif
-      PROOF_K[4 * i + 1] = n.d2;
-      PROOF_K[4 * i + 2] = n.d1;
-      PROOF_K[4 * i + 3] = n.d0;
-      //break;
+      // Smaller is better,
+      for (int i = 32; i > 0; i--, res_mid >>= 1) {
+        if (res_mid & 1) {
+
+          int found;
+          found = atomicInc(&PROOF_K[4 * i], 10000);
+          if (found == 0) {
+            PROOF_K[4 * i + 1] = n.d2;
+            PROOF_K[4 * i + 2] = n.d1;
+            PROOF_K[4 * i + 3] = n.d0;
+          }
+          break;
+        }
+      }
     }
 #endif
   }

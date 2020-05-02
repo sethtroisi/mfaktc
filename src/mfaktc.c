@@ -155,6 +155,8 @@ other return value
   static struct timeval timer_last_addfilecheck;
   int factorsfound = 0, numfactors = 0, restart = 0;
 
+  mystuff->max_proof = 50;
+
   int retval = 0;
 
   cudaError_t cudaError;

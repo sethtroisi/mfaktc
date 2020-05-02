@@ -124,7 +124,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 
 /* set result array to 0 */
   cudaMemsetAsync(mystuff->d_RES, 0, 1*sizeof(int)); //first int of result array contains the number of factors found
-  cudaMemsetAsync(mystuff->d_PROOF_K, 0, 128*sizeof(int));
+  cudaMemsetAsync(mystuff->d_PROOF_K, 0, 256*sizeof(int));
 
 //  for(i=0;i<32;i++)mystuff->h_RES[i]=0;
 //  cudaMemcpy(mystuff->d_RES, mystuff->h_RES, 32*sizeof(int), cudaMemcpyHostToDevice);
@@ -248,7 +248,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 
 /* download results from GPU */
   cudaMemcpy(mystuff->h_RES, mystuff->d_RES, 32*sizeof(int), cudaMemcpyDeviceToHost);
-  cudaMemcpy(mystuff->h_PROOF_K, mystuff->d_PROOF_K, 128*sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy(mystuff->h_PROOF_K, mystuff->d_PROOF_K, 256*sizeof(int), cudaMemcpyDeviceToHost);
 
 #ifdef DEBUG_GPU_MATH
   cudaMemcpy(mystuff->h_modbasecase_debug, mystuff->d_modbasecase_debug, 32*sizeof(int), cudaMemcpyDeviceToHost);

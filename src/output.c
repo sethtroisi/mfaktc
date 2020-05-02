@@ -492,7 +492,7 @@ void print_results(mystuff_t *mystuff, int is_72bit) {
   }
 
   if(factorsfound==0) {
-    for(int i=0; i<=32; i++) {
+    for(int i=0; i <= mystuff->max_proof; i++) {
       if(mystuff->h_PROOF_K[4*i]) {
         if (is_72bit)
         {
@@ -512,6 +512,7 @@ void print_results(mystuff_t *mystuff, int is_72bit) {
         }
 
         print_proof_k(mystuff, string, i);
+        mystuff->max_proof = i-1;
         break;
       }
     }
