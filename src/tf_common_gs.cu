@@ -95,7 +95,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 
 /* set result array to 0 */
   cudaMemset(mystuff->d_RES, 0, 1*sizeof(int)); //first int of result array contains the number of factors found
-  cudaMemset(mystuff->d_PROOF_K, 0, 256*sizeof(int));
+  cudaMemset(mystuff->d_PROOF, 0, 256*sizeof(int)); // 64*4 for debug
 
 #ifdef DEBUG_GPU_MATH
   cudaMemset(mystuff->d_modbasecase_debug, 0, 32*sizeof(int));
@@ -157,7 +157,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
     // Now let the GPU trial factor the candidates that survived the sieving
 
     MFAKTC_FUNC<<<numblocks, THREADS_PER_BLOCK, shared_mem_required>>>(mystuff->exponent, k_base, mystuff->d_bitarray, mystuff->gpu_sieve_processing_size, shiftcount, b_preinit,
-                                                                       mystuff->d_RES, mystuff->d_PROOF_K
+                                                                       mystuff->d_RES, mystuff->d_PROOF
 #if defined (TF_BARRETT) && (defined(TF_BARRETT_87BIT_GS) || defined(TF_BARRETT_88BIT_GS) || defined(TF_BARRETT_92BIT_GS) || defined(DEBUG_GPU_MATH))
                                                                        , mystuff->bit_min-63
 #endif
@@ -184,7 +184,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 
 /* download results from GPU */
   cudaMemcpy(mystuff->h_RES, mystuff->d_RES, 32*sizeof(int), cudaMemcpyDeviceToHost);
-  cudaMemcpy(mystuff->h_PROOF_K, mystuff->d_PROOF_K, 256*sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy(mystuff->h_PROOF, mystuff->d_PROOF, 256*sizeof(int), cudaMemcpyDeviceToHost);
 
 #ifdef DEBUG_GPU_MATH
   cudaMemcpy(mystuff->h_modbasecase_debug, mystuff->d_modbasecase_debug, 32*sizeof(int), cudaMemcpyDeviceToHost);

@@ -434,7 +434,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
   if(mystuff->mode == MODE_NORMAL)fclose(resultfile);
 }
 
-void print_proof_k(mystuff_t *mystuff, char *proof_k, int bits)
+void print_proof(mystuff_t *mystuff, char *proof, int diff)
 {
   char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
   FILE *resultfile = NULL;
@@ -446,15 +446,15 @@ void print_proof_k(mystuff_t *mystuff, char *proof_k, int bits)
 
   if(mystuff->mode != MODE_SELFTEST_SHORT)
   {
-    printf("\n%s%u proof_k(%s): %d bits \n", NAME_NUMBERS, mystuff->exponent, proof_k, bits);
+    printf("\n%s%u proof(%s): %d difficulty \n", NAME_NUMBERS, mystuff->exponent, proof, diff);
   }
 
   if(mystuff->mode == MODE_NORMAL)
   {
     resultfile = fopen(mystuff->resultfile, "a");
-    fprintf(resultfile, "%s%s%u proof_k(%s): %d bits [TF:%d:%d:mfaktc %s %s]\n",
+    fprintf(resultfile, "%s%s%u proof(%s): %d difficulty [TF:%d:%d:mfaktc %s %s]\n",
         UID, NAME_NUMBERS, mystuff->exponent,
-        proof_k, bits,
+        proof, diff,
         mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
     fclose(resultfile);
   }
@@ -492,27 +492,27 @@ void print_results(mystuff_t *mystuff, int is_72bit) {
   }
 
   if(factorsfound==0) {
-    for(int i=0; i <= mystuff->max_proof; i++) {
-      if(mystuff->h_PROOF_K[4*i]) {
+    for(int i = 63; i >= mystuff->min_proof; i--) {
+      if(mystuff->h_PROOF[4*i]) {
         if (is_72bit)
         {
-          int72 proof_k;
-          proof_k.d2=mystuff->h_PROOF_K[4*i + 1];
-          proof_k.d1=mystuff->h_PROOF_K[4*i + 2];
-          proof_k.d0=mystuff->h_PROOF_K[4*i + 3];
-          print_dez72(proof_k,string);
+          int72 proof;
+          proof.d2=mystuff->h_PROOF[4*i + 1];
+          proof.d1=mystuff->h_PROOF[4*i + 2];
+          proof.d0=mystuff->h_PROOF[4*i + 3];
+          print_dez72(proof,string);
         }
         else
         {
-          int96 proof_k;
-          proof_k.d2=mystuff->h_PROOF_K[4*i + 1];
-          proof_k.d1=mystuff->h_PROOF_K[4*i + 2];
-          proof_k.d0=mystuff->h_PROOF_K[4*i + 3];
-          print_dez96(proof_k,string);
+          int96 proof;
+          proof.d2=mystuff->h_PROOF[4*i + 1];
+          proof.d1=mystuff->h_PROOF[4*i + 2];
+          proof.d0=mystuff->h_PROOF[4*i + 3];
+          print_dez96(proof,string);
         }
 
-        print_proof_k(mystuff, string, i);
-        mystuff->max_proof = i-1;
+        print_proof(mystuff, string, i);
+        mystuff->min_proof = i+1;
         break;
       }
     }

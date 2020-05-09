@@ -32,7 +32,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound);
 
 void print_results(mystuff_t *mystuff, int is_72bit);
 //void print_factor(mystuff_t *mystuff, int factor_number, char *factor);
-//void print_proof_k(mystuff_t *mystuff, char *proof_k, int bits);
+//void print_proof(mystuff_t *mystuff, char *proof, int bits);
 
 
 double primenet_ghzdays(unsigned int exp, int bit_min, int bit_max);

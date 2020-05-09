@@ -17,7 +17,18 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-__device__ static void check_factor96(int96 f, int96 a, unsigned int *RES, unsigned int *PROOF_K)
+__device__ static void save_proof(int96 f, int diff, unsigned int *PROOF)
+/* f = 2*k*p=1 has a small residual of difficultiy diff */
+{
+  diff <<= 2;
+  if (atomicInc(&PROOF[diff], 10000) == 0) {
+    PROOF[diff + 1] = f.d2;
+    PROOF[diff + 2] = f.d1;
+    PROOF[diff + 3] = f.d0;
+  }
+}
+
+__device__ static void check_factor96(int96 f, int96 a, unsigned int *RES, unsigned int *PROOF)
 /* Check whether f is a factor or not. If f != 1 and a == 1 then f is a factor,
 in this case f is written into the RES array. */
 {
@@ -39,75 +50,53 @@ in this case f is written into the RES array. */
       }
     }
   }
+#ifndef WAGSTAFF
+  else if((a.d2|a.d1) == 0) {
+    // Can happen that f.d2 == 0 for tf < 64
+    int diff = 32 + __clz(a.d0) + ((f.d2 > 0) ? (32 - __clz(f.d2)) : -__clz(f.d1));
 
-  if((a.d2|a.d1)==0) {
-//#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
-    if (0)
-      printf("96bit: %u,%u,%u | %u,%u,%u |\n\n",
-          f.d2, f.d1, f.d0,
-          a.d2, a.d1, a.d0);
-//#endif
-    unsigned int res = a.d0;
-    for (int i = 1; i <= 32; i++, res >>= 1) {
-      if (res <= 1) {
-        int found;
-        found = atomicInc(&PROOF_K[4 * i], 10000);
-        if (found == 0) {
-          PROOF_K[4 * i + 1] = f.d2;
-          PROOF_K[4 * i + 2] = f.d1;
-          PROOF_K[4 * i + 3] = f.d0;
-        }
-        break;
+#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
+    if (0) {
+      index=atomicInc(&PROOF[0], 10000);
+      if(index <= 0) {
+        int diff1 = (f.d2 > 0) ? __clz(f.d2) : (32 + __clz(f.d1));
+        printf("cf96bit: %u,%u,%u | %u,%u,%u | %d = 64 - %d + %d \n\n",
+            f.d2, f.d1, f.d0,
+            a.d2, a.d1, a.d0,
+            diff, diff1, __clz(a.d0));
       }
     }
-  }
-}
-
-
-__device__ static void check_big_factor96(int96 f, int96 a, unsigned int *RES, unsigned int *PROOF_K)
-/* Similar to check_factor96() but without checking f != 1. This is a little
-bit faster but only safe for kernel which have a lower limit well above 1. The
-barrett based kernels have a lower limit of 2^64 so this function is used
-there. */
-{
-  int index;
-#ifdef WAGSTAFF
-  if(a.d2 == f.d2 && a.d1 == f.d1 && a.d0 == (f.d0 - 1))
-#else /* Mersennes */
-  if((a.d2|a.d1) == 0 && a.d0 == 1)
 #endif
-  {
-    index = atomicInc(&RES[0], 10000);
-    if(index < 10)				/* limit to 10 factors per class */
-    {
-      RES[index * 3 + 1] = f.d2;
-      RES[index * 3 + 2] = f.d1;
-      RES[index * 3 + 3] = f.d0;
-    }
+    save_proof(f, diff, PROOF);
   }
-
-  if((a.d2|a.d1)==0) {
-//#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
-    if (0)
-      printf("big 96bit: %u,%u,%u | %u,%u,%u |\n\n",
-          f.d2, f.d1, f.d0,
-          a.d2, a.d1, a.d0);
-//#endif
-    unsigned int res = a.d0;
-    for (int i = 1; i <= 32; i++, res >>= 1) {
-      if (res <= 1) {
-        int found;
-        found = atomicInc(&PROOF_K[4 * i], 10000);
-        if (found == 0) {
-          PROOF_K[4 * i + 1] = f.d2;
-          PROOF_K[4 * i + 2] = f.d1;
-          PROOF_K[4 * i + 3] = f.d0;
-        }
-        break;
-      }
-    }
-  }
+#endif
 }
+
+
+// __device__ static void check_big_factor96(int96 f, int96 a, unsigned int *RES, unsigned int *PROOF)
+// /* Similar to check_factor96() but without checking f != 1. This is a little
+// bit faster but only safe for kernel which have a lower limit well above 1. The
+// barrett based kernels have a lower limit of 2^64 so this function is used
+// there. */
+// {
+//   int index;
+// #ifdef WAGSTAFF
+//   if(a.d2 == f.d2 && a.d1 == f.d1 && a.d0 == (f.d0 - 1))
+// #else /* Mersennes */
+//   if((a.d2|a.d1) == 0 && a.d0 == 1)
+// #endif
+//   {
+//     index = atomicInc(&RES[0], 10000);
+//     if(index < 10)				/* limit to 10 factors per class */
+//     {
+//       RES[index * 3 + 1] = f.d2;
+//       RES[index * 3 + 2] = f.d1;
+//       RES[index * 3 + 3] = f.d0;
+//     }
+//   }
+//
+//   // TOOD Add PROOF similiar to check_factor_96()
+// }
 
 
 __device__ static void create_FC96(int96 *f, unsigned int exp, int96 k, unsigned int k_offset)
@@ -241,7 +230,7 @@ are "out of range".
 }
 
 
-__device__ static void mod_simple_96_and_check_big_factor96(int96 q, int96 n, float nf, unsigned int *RES, unsigned int *PROOF_K)
+__device__ static void mod_simple_96_and_check_big_factor96(int96 q, int96 n, float nf, unsigned int *RES, unsigned int *PROOF)
 /*
 This function is a combination of mod_simple_96(), check_big_factor96() and an additional correction step.
 If q mod n == 1 then n is a factor and written into the RES array.
@@ -320,36 +309,26 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
 
 #ifndef WAGSTAFF
     else {
-      //#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
+      /* Difficulty is number of trailing zeros on res */
+      int diff = 31 + __ffs(res_mid);
+
+      #if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
         // For debugging proof of work function
         if (0) {
-          int i = atomicInc(&PROOF_K[33], 10000);
+          int i = atomicInc(&PROOF[0], 10000);
           if (i <= 10) {
-              printf("mod check 96bit(%d): %u,%u,%u | %u,%u,%u | %u,%u,%u | %u | (%u,%u,%u), %u |\n\n",
+              printf("mod check 96bit(%d): %u,%u,%u | %u,%u,%u | %u,%u,%u | %u | (%u,%u,%u), %u | %d |\n\n",
                   i,
                   n.d2, n.d1, n.d0,
                   nn.d2, nn.d1, nn.d0,
                   q.d2, q.d1, q.d0,
                   qi,
-                  res_top, res_mid, res_low, res);
+                  res_top, res_mid, res_low, res,
+                  diff);
           }
         }
-      //#endif
-
-      // Smaller is better,
-      for (int i = 32; i > 0; i--, res_mid >>= 1) {
-        if (res_mid & 1) {
-
-          int found;
-          found = atomicInc(&PROOF_K[4 * i], 10000);
-          if (found == 0) {
-            PROOF_K[4 * i + 1] = n.d2;
-            PROOF_K[4 * i + 2] = n.d1;
-            PROOF_K[4 * i + 3] = n.d0;
-          }
-          break;
-        }
-      }
+      #endif
+      save_proof(n, diff, PROOF);
     }
 #endif
   }

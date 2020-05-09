@@ -72,10 +72,10 @@ typedef struct
   unsigned int *d_ktab[NUM_STREAMS_MAX];
   unsigned int *h_RES;                 /* Store number of factors in RES[0] and i'th factors in RES[3*i+1 .. 3*i+3] */
   unsigned int *d_RES;
-  unsigned int *h_PROOF_K;             /* Store k which had module <= 2^i for 1 <= i < 64,
-                                          PROOF_K[4*i] = found
-                                          PROOF_K[4*i+1 .. 4*i+2] = k */
-  unsigned int *d_PROOF_K;
+  unsigned int *h_PROOF;             /* Store 2*k*p+1 which have low residual (or residual with many zeros),
+                                        PROOF[4*i] = found
+                                        PROOF[4*i+1 .. 4*i+2] = k */
+  unsigned int *d_PROOF;
 
   unsigned int exponent;               /* the exponent we're currently working on */
   int bit_min;                         /* where do we start TFing */
@@ -124,7 +124,7 @@ typedef struct
 
   int quit;
   int verbosity;                       /* 0 = reduced number of screen printfs, 1 = default, >= 2 = some additional printfs */
-  int max_proof;                       /* max PROOF_K to print */
+  int min_proof;                       /* min PROOF to print */
 
   int selftestsize;
   int selftestrandomoffset;

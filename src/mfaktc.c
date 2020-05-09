@@ -155,7 +155,8 @@ other return value
   static struct timeval timer_last_addfilecheck;
   int factorsfound = 0, numfactors = 0, restart = 0;
 
-  mystuff->max_proof = 50;
+  // TODO set based on bit_max_stage and exp size
+  mystuff->min_proof = 30;
 
   int retval = 0;
 
@@ -469,7 +470,7 @@ k_max and k_min are used as 64bit temporary integers here...
         if(mystuff->mode != MODE_SELFTEST_SHORT)printf("selftest for %s%u passed!\n", NAME_NUMBERS, mystuff->exponent);
       }
     }
-// Add test for PROOF_K
+// Add test for PROOF
 /*
 calculate the value of the known factor in f_{hi|med|low} and compare with the
 results from the selftest.
@@ -1062,15 +1063,15 @@ int main(int argc, char **argv)
     return 1;
   }
   // UPDATE COUNT
-  if( cudaHostAlloc((void**)&(mystuff.h_PROOF_K), 256 * sizeof(int), 0) != cudaSuccess )
+  if( cudaHostAlloc((void**)&(mystuff.h_PROOF), 256 * sizeof(int), 0) != cudaSuccess )
   {
-    printf("ERROR: cudaHostAlloc(h_PROOF_K) failed\n");
+    printf("ERROR: cudaHostAlloc(h_PROOF) failed\n");
     print_last_CUDA_error();
     return 1;
   }
-  if( cudaMalloc((void**)&(mystuff.d_PROOF_K), 256 * sizeof(int)) != cudaSuccess )
+  if( cudaMalloc((void**)&(mystuff.d_PROOF), 256 * sizeof(int)) != cudaSuccess )
   {
-    printf("ERROR: cudaMalloc(d_PROOF_K) failed\n");
+    printf("ERROR: cudaMalloc(d_PROOF) failed\n");
     print_last_CUDA_error();
     return 1;
   }
@@ -1211,8 +1212,8 @@ int main(int argc, char **argv)
 #endif
   cudaFree(mystuff.d_RES);
   cudaFree(mystuff.h_RES);
-  cudaFree(mystuff.d_PROOF_K);
-  cudaFree(mystuff.h_PROOF_K);
+  cudaFree(mystuff.d_PROOF);
+  cudaFree(mystuff.h_PROOF);
   for(i=0;i<(mystuff.num_streams + mystuff.cpu_streams);i++)cudaFreeHost(mystuff.h_ktab[i]);
   for(i=0;i<mystuff.num_streams;i++)cudaFree(mystuff.d_ktab[i]);
   sieve_free();

@@ -28,7 +28,7 @@ precomputed... This behaviour is controlled by the define CPU_SIEVE.
 */
 
 
-__device__ static void test_FC96_barrett92(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF_K, int bit_max64
+__device__ static void test_FC96_barrett92(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF, int bit_max64
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
@@ -133,12 +133,12 @@ Precalculated here since it is the same for all steps in the following loop */
 this kernel has a lower FC limit of 2^64 so we can use [mod_simple_96_and_]check_big_factor96().
 mod_simple_96_and_check_big_factor96() includes the final adjustment, too. The code above may
 produce an a that is too large by up to 11 times f. */
-  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF_K);
+  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF);
 
 }
 
 
-__device__ static void test_FC96_barrett88(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF_K, int bit_max64
+__device__ static void test_FC96_barrett88(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF, int bit_max64
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
@@ -236,11 +236,11 @@ Precalculated here since it is the same for all steps in the following loop */
 this kernel has a lower FC limit of 2^64 so we can use [mod_simple_96_and_]check_big_factor96().
 mod_simple_96_and_check_big_factor96() includes the final adjustment, too. The code above may
 produce an a that is too large by up to 6 times f. */
-  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF_K);
+  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF);
 }
 
 
-__device__ static void test_FC96_barrett87(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF_K, int bit_max64
+__device__ static void test_FC96_barrett87(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF, int bit_max64
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
@@ -340,11 +340,11 @@ Precalculated here since it is the same for all steps in the following loop */
 this kernel has a lower FC limit of 2^64 so we can use [mod_simple_96_and_]check_big_factor96().
 mod_simple_96_and_check_big_factor96() includes the final adjustment, too. The code above may
 produce an a that is too large by up to 11 times f. */
-  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF_K);
+  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF);
 }
 
 
-__device__ static void test_FC96_barrett79(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF_K
+__device__ static void test_FC96_barrett79(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
@@ -449,11 +449,11 @@ Precalculated here since it is the same for all steps in the following loop */
 this kernel has a lower FC limit of 2^64 so we can use [mod_simple_96_and_]check_big_factor96().
 mod_simple_96_and_check_big_factor96() includes the final adjustment, too. The code above may
 produce an a that is too large by up to 11 times f. */
-  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF_K);
+  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF);
 }
 
 
-__device__ static void test_FC96_barrett77(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF_K
+__device__ static void test_FC96_barrett77(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
@@ -567,11 +567,11 @@ Precalculated here since it is the same for all steps in the following loop */
 this kernel has a lower FC limit of 2^64 so we can use [mod_simple_96_and_]check_big_factor96().
 mod_simple_96_and_check_big_factor96() includes the final adjustment, too. The code above may
 produce an a that is too large by up to 5 times f. */
-  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF_K);
+  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF);
 }
 
 
-__device__ static void test_FC96_barrett76(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF_K
+__device__ static void test_FC96_barrett76(int96 f, int192 b, unsigned int shifter, unsigned int *RES, unsigned int *PROOF
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
@@ -685,5 +685,5 @@ Precalculated here since it is the same for all steps in the following loop */
 this kernel has a lower FC limit of 2^64 so we can use [mod_simple_96_and_]check_big_factor96().
 mod_simple_96_and_check_big_factor96() includes the final adjustment, too. The code above may
 produce an a that is too large by up to 11 times f. */
-  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF_K);
+  mod_simple_96_and_check_big_factor96(a, f, ff, RES, PROOF);
 }
