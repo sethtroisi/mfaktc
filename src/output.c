@@ -333,6 +333,15 @@ void print_status_line(mystuff_t *mystuff)
 }
 
 
+int set_UID(char *buffer, mystuff_t *current) {
+  if(current->V5UserID[0] && current->ComputerID[0]) {
+    sprintf(buffer, "UID: %s/%s, ", current->V5UserID, current->ComputerID);
+    return 1;
+  }
+  buffer[0]=0;
+  return 0;
+}
+
 void print_result_line(mystuff_t *mystuff, int factorsfound)
 /* printf the final result line (STDOUT and resultfile) */
 {
@@ -368,11 +377,8 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     FILE *resultfile = fopen(mystuff->resultfile, "a");
     if(mystuff->print_timestamp == 1) print_timestamp(resultfile);
 
-     char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
-    if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
-      sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
-    else
-      UID[0]=0;
+    char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
+    set_UID(UID, mystuff);
 
     fprintf(resultfile, "%s%s\n", UID, string);
     fclose(resultfile);
@@ -382,14 +388,10 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 
 void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
 {
-  char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
   FILE *resultfile = NULL;
 
-  if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
-    sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
-  else
-    UID[0]=0;
-
+  char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
+  set_UID(UID, mystuff);
 
   if(mystuff->mode == MODE_NORMAL)
   {
@@ -427,14 +429,6 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
 
 void print_proof(mystuff_t *mystuff, char *proof, int diff)
 {
-  char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
-  FILE *resultfile = NULL;
-
-  if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
-    sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
-  else
-    UID[0]=0;
-
   if(mystuff->mode != MODE_SELFTEST_SHORT)
   {
     printf("\n%s%u proof(%s): %d difficulty \n", NAME_NUMBERS, mystuff->exponent, proof, diff);
@@ -442,7 +436,10 @@ void print_proof(mystuff_t *mystuff, char *proof, int diff)
 
   if(mystuff->mode == MODE_NORMAL)
   {
-    resultfile = fopen(mystuff->resultfile, "a");
+    char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
+    set_UID(UID, mystuff);
+
+    FILE *resultfile = fopen(mystuff->resultfile, "a");
     fprintf(resultfile, "%s%s%u proof(%s): %d difficulty [TF:%d:%d:mfaktc %s %s]\n",
         UID, NAME_NUMBERS, mystuff->exponent,
         proof, diff,
