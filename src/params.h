@@ -143,12 +143,14 @@ The following lines define the min, default and max value.
 
 
 
-/* set NUM_CLASSES and SIEVE_SIZE depending on MORE_CLASSES and SIEVE_SIZE_LIMIT */
+/* set NUM_CLASSES, CLASS_COUNT, and SIEVE_SIZE depending on MORE_CLASSES and SIEVE_SIZE_LIMIT */
 #ifndef MORE_CLASSES
   #define NUM_CLASSES 420 /* 2 * 2 * 3 * 5 * 7 */  /* DO NOT CHANGE! */
+  #define CLASS_COUNT 96
   #define SIEVE_SIZE ((SIEVE_SIZE_LIMIT<<13) - (SIEVE_SIZE_LIMIT<<13) % (11*13*17*19)) /* DO NOT CHANGE! */
 #else
   #define NUM_CLASSES 4620 /* 2 * 2 * 3 * 5 * 7 * 11 */ /* DO NOT CHANGE! */
+  #define CLASS_COUNT 960
   #define SIEVE_SIZE ((SIEVE_SIZE_LIMIT<<13) - (SIEVE_SIZE_LIMIT<<13) % (13*17*19*23)) /* DO NOT CHANGE! */
 #endif
 
