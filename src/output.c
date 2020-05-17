@@ -381,6 +381,8 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     set_UID(UID, mystuff);
 
     fprintf(resultfile, "%s%s\n", UID, string);
+    if (mystuff->proof_line[0])
+      fprintf(resultfile, "%s\n", mystuff->proof_line);
     fclose(resultfile);
   }
 }
@@ -429,7 +431,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
 
 void print_proof(mystuff_t *mystuff, char *proof, int diff)
 {
-  if(mystuff->mode != MODE_SELFTEST_SHORT)
+  if(mystuff->mode != MODE_SELFTEST_SHORT && mystuff->verbosity >= 2)
   {
     printf("\n%s%u proof(%s): %d difficulty \n", NAME_NUMBERS, mystuff->exponent, proof, diff);
   }
@@ -439,17 +441,22 @@ void print_proof(mystuff_t *mystuff, char *proof, int diff)
     char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
     set_UID(UID, mystuff);
 
-    FILE *resultfile = fopen(mystuff->resultfile, "a");
-    fprintf(resultfile, "%s%s%u proof(%s): %d difficulty [TF:%d:%d:mfaktc %s %s]\n",
+    sprintf(mystuff->proof_line, "%s%s%u proof(%s): %d difficulty [TF:%d:%d:mfaktc %s %s]",
         UID, NAME_NUMBERS, mystuff->exponent,
         proof, diff,
         mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
-    fclose(resultfile);
+
+    if (mystuff->verbosity >= 2) {
+      FILE *resultfile = fopen(mystuff->resultfile, "a");
+      fprintf(resultfile, "%s\n", mystuff->proof_line);
+      fclose(resultfile);
+    }
   }
 }
 
 
-void print_results(mystuff_t *mystuff, int is_72bit) {
+void print_results(mystuff_t *mystuff, int is_72bit)
+{
   char string[50];
 
   int factorsfound=mystuff->h_RES[0];

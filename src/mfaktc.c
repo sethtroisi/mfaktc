@@ -157,6 +157,7 @@ other return value
 
   // TODO set based on bit_max_stage and exp size
   mystuff->min_proof = 30;
+  mystuff->proof_line[0] = 0;
 
   int retval = 0;
 
