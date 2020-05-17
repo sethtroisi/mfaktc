@@ -336,36 +336,27 @@ void print_status_line(mystuff_t *mystuff)
 void print_result_line(mystuff_t *mystuff, int factorsfound)
 /* printf the final result line (STDOUT and resultfile) */
 {
-  char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
   char string[200];
+  char range[50];
+  char version[50];
+  sprintf(range, "for %s%u from 2^%2d to 2^%2d",
+        NAME_NUMBERS, mystuff->exponent,
+        mystuff->bit_min, mystuff->bit_max_stage);
+  sprintf(version, "[mfaktc %s %s]", MFAKTC_VERSION, mystuff->stats.kernelname);
 
-  FILE *resultfile=NULL;
-
-
-  if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
-    sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
-  else
-    UID[0]=0;
-
-  if(mystuff->mode == MODE_NORMAL)
-  {
-    resultfile = fopen(mystuff->resultfile, "a");
-    if(mystuff->print_timestamp == 1)print_timestamp(resultfile);
-  }
   if(factorsfound)
   {
+    char found[100];
+    sprintf(found, "found %d factor%s", factorsfound, (factorsfound > 1) ? "s" : "");
+
     if((mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < CLASS_COUNT))
-    {
-      sprintf(string, "found %d factor%s for %s%u from 2^%2d to 2^%2d (partially tested) [mfaktc %s %s]", factorsfound, (factorsfound > 1) ? "s" : "", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
-    }
+      sprintf(string, "%s %s (partially tested) %s", found, range, version);
     else
-    {
-      sprintf(string, "found %d factor%s for %s%u from 2^%2d to 2^%2d [mfaktc %s %s]", factorsfound, (factorsfound > 1) ? "s" : "", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
-    }
+      sprintf(string, "%s %s %s", found, range, version);
   }
   else
   {
-    sprintf(string, "no factor for %s%u from 2^%d to 2^%d [mfaktc %s %s]", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
+    sprintf(string, "no factor %s %s", range, version);
   }
 
   if(mystuff->mode != MODE_SELFTEST_SHORT)
@@ -374,6 +365,15 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   }
   if(mystuff->mode == MODE_NORMAL)
   {
+    FILE *resultfile = fopen(mystuff->resultfile, "a");
+    if(mystuff->print_timestamp == 1) print_timestamp(resultfile);
+
+     char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
+    if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
+      sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
+    else
+      UID[0]=0;
+
     fprintf(resultfile, "%s%s\n", UID, string);
     fclose(resultfile);
   }
@@ -406,11 +406,14 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
     }
     if(mystuff->mode == MODE_NORMAL)
     {
-#ifndef MORE_CLASSES
-      fprintf(resultfile, "%s%s%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s]\n", UID, NAME_NUMBERS, mystuff->exponent, factor, mystuff->bit_min, mystuff->bit_max_stage, ((mystuff->stopafterfactor == 2) && (mystuff->stats.class_counter <  96)) ? "*" : "" , MFAKTC_VERSION, mystuff->stats.kernelname);
-#else
-      fprintf(resultfile, "%s%s%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s]\n", UID, NAME_NUMBERS, mystuff->exponent, factor, mystuff->bit_min, mystuff->bit_max_stage, ((mystuff->stopafterfactor == 2) && (mystuff->stats.class_counter < 960)) ? "*" : "" , MFAKTC_VERSION, mystuff->stats.kernelname);
-#endif
+
+      fprintf(resultfile, "%s%s%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s]\n",
+          UID,
+          NAME_NUMBERS, mystuff->exponent,
+          factor,
+          mystuff->bit_min, mystuff->bit_max_stage,
+          ((mystuff->stopafterfactor == 3) && (mystuff->stats.class_counter <  CLASS_COUNT)) ? "*" : "" ,
+          MFAKTC_VERSION, mystuff->stats.kernelname);
     }
   }
   else /* factor_number >= 10 */
