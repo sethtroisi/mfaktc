@@ -21,6 +21,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <errno.h>
 
 #include "params.h"
+#include "my_types.h"
 
 unsigned int checkpoint_checksum(char *string, int chars)
 /* generates a CRC-32 like checksum of the string */
@@ -45,16 +46,16 @@ unsigned int checkpoint_checksum(char *string, int chars)
   return chksum;
 }
 
-void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class, int num_factors)
+void checkpoint_write(mystuff_t* current, int cur_class, int num_factors)
 /*
 checkpoint_write() writes the checkpoint file.
 */
 {
   FILE *f;
   char buffer[100], filename[20];
-  unsigned int i;
+  unsigned int checksum;
 
-  sprintf(filename, "%s%u.ckp", NAME_NUMBERS, exp);
+  sprintf(filename, "%s%u.ckp", NAME_NUMBERS, current->exponent);
 
   f=fopen(filename, "w");
   if(f==NULL)
@@ -63,9 +64,16 @@ checkpoint_write() writes the checkpoint file.
   }
   else
   {
-    sprintf(buffer,"%s%u %d %d %d %s: %d %d", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, cur_class, num_factors);
-    i=checkpoint_checksum(buffer,strlen(buffer));
-    fprintf(f,"%s%u %d %d %d %s: %d %d %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, cur_class, num_factors, i);
+    sprintf(buffer, "%s%u %d %d %d %s: %d %d",
+        NAME_NUMBERS, current->exponent,
+        current->bit_min, current->bit_max_stage,
+        NUM_CLASSES, MFAKTC_VERSION,
+        cur_class,
+        num_factors);
+
+    checksum = checkpoint_checksum(buffer,strlen(buffer));
+
+    fprintf(f,"%s %08X", buffer, checksum);
     fclose(f);
   }
 }
@@ -108,9 +116,9 @@ returns 0 otherwise
     {
       ptr=&(buffer[i]);
       sscanf(ptr,"%d %d", cur_class, num_factors);
-      sprintf(buffer2,"%s%u %d %d %d %s: %d %d", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, *cur_class, *num_factors);
+      sprintf(buffer2,"%s: %d %d", buffer, *cur_class, *num_factors);
       chksum=checkpoint_checksum(buffer2,strlen(buffer2));
-      sprintf(buffer2,"%s%u %d %d %d %s: %d %d %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, *cur_class, *num_factors, chksum);
+      sprintf(buffer2,"%s %08X", buffer2, chksum);
       if(*cur_class >= 0 && \
          *cur_class < NUM_CLASSES && \
          *num_factors >= 0 && \
